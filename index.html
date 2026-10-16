@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12091a">
+<title>Avant qu'il soit tard — ENNAHDHA CLUB</title>
+<style>
+:root{--pink:#ec4899;--pink2:#f9a8d4;--deep:#9d174d;--glass:rgba(24,12,34,.76)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#12091a;overflow:hidden;font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;color:#fff}
+button{font-family:inherit;cursor:pointer;color:inherit;border:none}
+#stage{position:fixed;inset:0;overflow:hidden;user-select:none;-webkit-user-select:none}
+.bg{position:absolute;inset:0;opacity:0;transition:opacity 1s ease}
+.bg.on{opacity:1}
+.bg svg{width:100%;height:100%;display:block}
+#vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.5))}
+#petals{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.petal{position:absolute;bottom:-30px;border-radius:60% 0 60% 0;background:rgba(249,168,212,.75);animation:floaty linear infinite}
+@keyframes floaty{0%{transform:translate(0,0) rotate(0);opacity:0}10%{opacity:.9}100%{transform:translate(70px,-115vh) rotate(420deg);opacity:0}}
+
+/* personnages */
+#chars{position:absolute;left:0;right:0;bottom:0;height:90%;display:flex;pointer-events:none}
+.slot{flex:1;display:flex;justify-content:center;align-items:flex-end;opacity:0;transform:translateY(46px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.8,.2,1),filter .5s ease}
+.slot.show{opacity:1;transform:translateY(0)}
+.slot.show.act{transform:translateY(-8px) scale(1.035);z-index:2}
+.slot.dim{filter:brightness(.55) saturate(.75)}
+.slot svg{height:100%;width:auto;flex:none;filter:drop-shadow(0 12px 26px rgba(0,0,0,.35))}
+.all{animation:breathe 4.2s ease-in-out infinite}
+@keyframes breathe{50%{transform:translateY(5px)}}
+.eye{transform-box:fill-box;transform-origin:center;animation:blink 5s infinite;animation-delay:var(--d,0s)}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
+.talking .mouth{transform-box:fill-box;transform-origin:center;animation:talk .24s ease-in-out infinite alternate}
+@keyframes talk{to{transform:scaleY(1.75)}}
+.tear{animation:tear 1.8s infinite;opacity:0}
+.t2{animation-delay:.8s}
+@keyframes tear{0%{transform:translateY(0);opacity:0}20%{opacity:.9}100%{transform:translateY(24px);opacity:0}}
+
+/* HUD */
+#hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;z-index:20;pointer-events:none}
+#hud>*{pointer-events:auto}
+.chip{background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:8px 14px;font-size:13px;display:flex;align-items:center;gap:10px}
+#chlabel{opacity:.9;max-width:44vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{width:90px;height:7px;border-radius:9px;background:rgba(255,255,255,.18);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#f9a8d4,#ec4899);transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.tools{display:flex;gap:8px}
+.ib{width:38px;height:38px;border-radius:50%;background:var(--glass);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.16);font-size:17px;display:grid;place-items:center;transition:transform .2s,background .2s}
+.ib:hover{transform:scale(1.1);background:rgba(236,72,153,.55)}
+
+/* dialogue */
+#dlg{position:absolute;left:50%;bottom:3.5%;transform:translateX(-50%);width:min(1080px,94vw);min-height:150px;background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.18);border-radius:22px;padding:30px 30px 26px;z-index:10;cursor:pointer;box-shadow:0 20px 60px rgba(0,0,0,.45);transition:opacity .4s,transform .4s}
+#dlg.hid{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(20px)}
+#name{position:absolute;top:-17px;left:26px;padding:6px 18px;border-radius:999px;font-weight:700;font-size:15px;color:#1b1024;letter-spacing:.3px;box-shadow:0 6px 18px rgba(0,0,0,.3)}
+#txt{font-size:clamp(16px,2.1vw,23px);line-height:1.55;min-height:3.1em}
+#txt.i{font-style:italic;color:#e9d5ff}
+#nxt{position:absolute;right:22px;bottom:10px;color:var(--pink2);animation:bob 1s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(5px)}}
+
+/* choix */
+#choices{position:absolute;inset:0;z-index:15;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;padding:20px 20px 150px;background:rgba(10,4,20,.38);opacity:0;pointer-events:none;transition:opacity .35s}
+#choices.on{opacity:1;pointer-events:auto}
+.choice{width:min(740px,92vw);text-align:left;padding:18px 22px 18px 58px;border-radius:18px;font-size:clamp(15px,1.9vw,19px);line-height:1.4;background:linear-gradient(135deg,rgba(236,72,153,.9),rgba(131,24,67,.92));border:1px solid rgba(255,255,255,.3);box-shadow:0 12px 34px rgba(236,72,153,.28);position:relative;animation:slideup .5s both cubic-bezier(.2,.9,.3,1.1);transition:transform .2s,box-shadow .2s}
+.choice:hover{transform:translateY(-3px) scale(1.012);box-shadow:0 16px 42px rgba(236,72,153,.5)}
+.choice .k{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.22);display:grid;place-items:center;font-weight:700;font-size:14px}
+@keyframes slideup{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+
+#toast{position:absolute;top:70px;left:50%;transform:translate(-50%,-20px);z-index:25;background:rgba(255,255,255,.95);color:#4a0d2c;padding:10px 20px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;pointer-events:none;transition:all .4s;max-width:92vw;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#toast.neg{background:#fde2e2;color:#7f1d1d}
+
+/* modales */
+#modal,#aux{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:30;background:rgba(10,4,20,.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:16px}
+#aux{z-index:70}
+#modal.on,#aux.on{display:flex}
+.card{width:min(760px,94vw);max-height:90vh;overflow:auto;background:linear-gradient(160deg,#2c1340,#1b0f27);border:1px solid rgba(249,168,212,.35);border-radius:26px;padding:28px 30px;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:pop .5s cubic-bezier(.2,1.2,.3,1)}
+@keyframes pop{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:none}}
+.card h2{font-size:clamp(20px,3vw,27px);margin-bottom:6px;line-height:1.25}
+.card .ic{font-size:40px;margin-bottom:6px}
+.card .tagq{display:inline-block;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--pink2);margin-bottom:10px;font-weight:700}
+.card ul{list-style:none;margin:14px 0}
+.card li{padding:11px 14px 11px 40px;margin-bottom:8px;border-radius:12px;background:rgba(255,255,255,.07);position:relative;line-height:1.45;animation:slideup .5s both}
+.card li::before{content:"♥";position:absolute;left:14px;color:var(--pink)}
+.foot{margin:14px 0 18px;padding:12px 14px;border-left:3px solid var(--pink);background:rgba(236,72,153,.12);border-radius:0 12px 12px 0;line-height:1.5;font-size:15px}
+.btn{display:inline-block;padding:13px 26px;border-radius:999px;font-weight:700;font-size:16px;background:linear-gradient(135deg,#f472b6,#be185d);box-shadow:0 10px 26px rgba(236,72,153,.4);transition:transform .2s}
+.btn:hover{transform:translateY(-2px) scale(1.03)}
+.btn.ghost{background:rgba(255,255,255,.1);box-shadow:none;border:1px solid rgba(255,255,255,.25)}
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.qb{flex:1;min-width:130px;padding:16px;border-radius:16px;font-size:18px;font-weight:700;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);transition:all .2s}
+.qb:hover:not(:disabled){background:rgba(236,72,153,.4)}
+.qb.ok{background:#15803d;border-color:#4ade80}
+.qb.ko{background:#991b1b;border-color:#f87171}
+.qb:disabled{cursor:default;opacity:.85}
+#qres{margin-top:14px}
+.dots{display:flex;gap:7px;justify-content:center;margin:16px 0}
+.dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.25);transition:all .3s}
+.dots i.on{background:var(--pink);transform:scale(1.35)}
+.step{text-align:center;padding:10px 0;animation:slideup .45s both}
+.step .big{font-size:64px}
+.step h3{font-size:24px;margin:6px 0}
+.step p{line-height:1.6;font-size:16px;color:#f3e8ff}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+@media(max-width:620px){.cmp{grid-template-columns:1fr}}
+.col{border-radius:18px;padding:16px;background:rgba(255,255,255,.06)}
+.col h3{font-size:17px;margin-bottom:10px}
+.col.a{border:1px solid #4ade80}.col.a h3{color:#86efac}
+.col.n{border:1px solid #fbbf24}.col.n h3{color:#fcd34d}
+.ev{padding:9px 0 9px 22px;border-left:2px dashed rgba(255,255,255,.3);margin-left:6px;position:relative;font-size:14px;line-height:1.4;animation:slideup .5s both}
+.ev::before{content:"";position:absolute;left:-7px;top:13px;width:12px;height:12px;border-radius:50%;background:var(--c)}
+.col.a{--c:#4ade80}.col.n{--c:#fbbf24}
+.ev b{display:block;font-size:12px;opacity:.75;letter-spacing:.5px;text-transform:uppercase}
+.log p{margin-bottom:10px;line-height:1.45;font-size:15px}
+.log b{margin-right:6px}
+
+/* carte chapitre */
+#chap{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:radial-gradient(circle at 50% 40%,#42175a,#12091a 70%);opacity:0;pointer-events:none;transition:opacity .7s ease;padding:20px}
+#chap.on{opacity:1}
+#chap small{letter-spacing:6px;text-transform:uppercase;color:var(--pink2);font-size:15px;opacity:0;transform:translateY(14px);transition:all .8s .3s}
+#chap h1{font-size:clamp(30px,6vw,64px);margin-top:12px;font-weight:800;opacity:0;transform:translateY(20px);transition:all .9s .5s}
+#chap .line{width:0;height:3px;background:linear-gradient(90deg,transparent,var(--pink),transparent);margin-top:22px;transition:width 1.2s .7s}
+#chap.on small,#chap.on h1{opacity:1;transform:none}
+#chap.on .line{width:min(420px,70vw)}
+
+/* fin */
+#end{position:absolute;inset:0;z-index:45;display:none;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 30%,rgba(66,23,90,.94),rgba(18,9,26,.97));padding:16px;overflow:auto}
+#end.on{display:flex}
+#end .card{width:min(820px,96vw);text-align:center}
+#end .big{font-size:13px;letter-spacing:5px;text-transform:uppercase;color:var(--pink2)}
+#end h1{font-size:clamp(28px,5vw,46px);margin:6px 0 10px}
+#end .sc{margin:16px auto;max-width:360px}
+#end .bar{width:100%;height:12px;margin-top:8px}
+#end ul{text-align:left}
+.stat{font-size:17px;font-weight:600;color:#fde68a;margin:12px 0}
+.small{font-size:12px;opacity:.7;line-height:1.5;margin-top:14px}
+
+/* titre */
+#title{position:absolute;inset:0;z-index:50;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;transition:opacity .8s,visibility .8s}
+#title.gone{opacity:0;visibility:hidden}
+.tbg{position:absolute;inset:0;background:radial-gradient(circle at 50% 35%,#6b2a7e 0,#2a1040 45%,#12091a 100%);}
+.tbg::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 80%,rgba(236,72,153,.35),transparent 40%),radial-gradient(circle at 85% 20%,rgba(249,168,212,.25),transparent 40%)}
+.tcontent{position:relative;z-index:2;padding:5vh 20px 0;max-width:760px}
+.kicker{letter-spacing:5px;text-transform:uppercase;font-size:clamp(11px,1.6vw,14px);color:var(--pink2)}
+#title h1{font-size:clamp(38px,8vw,86px);line-height:1;margin:12px 0;font-weight:800;background:linear-gradient(180deg,#fff,#f9a8d4);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{font-size:clamp(14px,2vw,19px);opacity:.88;margin-bottom:22px;line-height:1.5}
+.rib svg{width:clamp(50px,8vw,80px);animation:bob 2.4s ease-in-out infinite;filter:drop-shadow(0 0 18px rgba(236,72,153,.8))}
+#title .btn{margin:6px}
+.univ{margin-top:14px;font-size:13px;opacity:.7}
+.tri{position:absolute;left:0;right:0;bottom:0;height:46%;display:flex;justify-content:center;align-items:flex-end;z-index:1;opacity:.95}
+.tri svg{height:100%;width:auto;flex:none;margin:0 -2vw}
+.tri svg:nth-child(2){height:112%}
+
+@media (max-aspect-ratio:1/1){
+ #chars{height:72%}
+ .slot svg{width:175%;height:auto;max-height:100%}
+ .slot.dim{filter:brightness(.55) saturate(.75)}
+ #dlg{padding:26px 18px 22px;min-height:140px}
+ #chlabel{max-width:36vw}
+ .bar{width:56px}
+ .tri{height:34%}
+ .tri svg{height:auto;width:46vw;max-height:100%}
+ .tri svg:nth-child(2){height:auto;width:52vw}
+}
+@media (prefers-reduced-motion:reduce){.all,.petal,.eye{animation:none}}
+
+/* langue / crédits / RTL */
+.lg{position:absolute;top:14px;right:16px;z-index:5;font-weight:700}
+.lg:hover{background:rgba(236,72,153,.55)}
+#credit{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;justify-content:center;padding:8px 10px;pointer-events:auto}
+.cr{display:flex;flex-wrap:wrap;gap:4px 18px;justify-content:center;align-items:center;font-size:11.5px;line-height:1.35;background:rgba(18,9,26,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:7px 14px;text-align:center}
+.cr b{color:var(--pink2)}.cr em{opacity:.75;font-style:normal;width:100%}
+.card .cr{margin-top:14px;font-size:12px}
+.rtl #txt,.rtl #dlg,.rtl .card,.rtl #choices,.rtl #chap,.rtl #toast,.rtl #title .tcontent{direction:rtl}
+.rtl *{letter-spacing:0!important}.rtl #txt.i{font-style:normal}
+.rtl #name{left:auto;right:26px}.rtl #nxt{right:auto;left:22px}
+.rtl .choice{text-align:right;padding:18px 58px 18px 22px}.rtl .choice .k{left:auto;right:16px}
+.rtl .card li{padding:11px 40px 11px 14px}.rtl .card li::before{left:auto;right:14px}
+.rtl .foot{border-left:0;border-right:3px solid var(--pink);border-radius:12px 0 0 12px}
+.rtl .ev{padding:9px 22px 9px 0;border-left:0;border-right:2px dashed rgba(255,255,255,.3);margin-left:0;margin-right:6px}
+.rtl .ev::before{left:auto;right:-7px}.rtl #end ul{text-align:right}.rtl .lg{right:auto;left:16px}
+@media (max-aspect-ratio:1/1){.cr{font-size:10px;gap:2px 10px;padding:5px 9px}.tri{bottom:46px}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg" id="bgA"></div><div class="bg" id="bgB"></div>
+  <div id="petals"></div>
+  <div id="vig"></div>
+  <div id="chars"><div class="slot" id="sL"></div><div class="slot" id="sC"></div><div class="slot" id="sR"></div></div>
+
+  <div id="hud">
+    <div class="chip"><span id="chlabel">—</span></div>
+    <div class="chip" title="Ton score de sensibilisation">
+      <svg width="16" height="20" viewBox="-20 -28 40 60"><path d="M0 -14 C-12 -32 -30 -14 -12 0 L10 26 M0 -14 C12 -32 30 -14 12 0 L-10 26" stroke="#ff4fa3" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="bar"><i id="fill"></i></div>
+    </div>
+    <div class="tools">
+      <button class="ib" id="bLog" title="Journal des dialogues" aria-label="Journal">📜</button>
+      <button class="ib" id="bLang">🌐</button>
+      <button class="ib" id="bSnd" title="Son / musique" aria-label="Son">🔊</button>
+      <button class="ib" id="bFs" title="Plein écran" aria-label="Plein écran">⛶</button>
+      <button class="ib" id="bInfo" title="Aide et informations" aria-label="Aide">ⓘ</button>
+    </div>
+  </div>
+
+  <div id="choices"></div>
+  <div id="dlg" class="hid"><div id="name"></div><div id="txt"></div><div id="nxt">▼</div></div>
+  <div id="toast"></div>
+  <div id="modal"></div>
+  <div id="chap"></div>
+  <div id="end"></div>
+
+  <div id="title">
+    <div class="tbg"></div><button class="chip lg" id="tLang"></button>
+    <div class="tcontent">
+      <div class="rib"><svg viewBox="-20 -28 40 60"><path d="M0 -14 C-12 -32 -30 -14 -12 0 L10 26 M0 -14 C12 -32 30 -14 12 0 L-10 26" stroke="#ff4fa3" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <p class="kicker" id="kk"></p>
+      <h1 id="tt"></h1>
+      <p class="sub" id="sb">Une visual novel interactive : deux amies de 21 ans, un médecin, et une décision qui change tout.</p>
+      <button class="btn" id="start">▶ Commencer</button>
+      <button class="btn ghost" id="how">Comment jouer · À propos</button>
+      <p class="univ" id="univ"></p>
+    </div>
+    <div class="tri" id="tri"></div><div id="credit"></div>
+  </div>
+  <div id="aux"></div>
+</div>
+
+<script>
+/* ============ PERSONNALISATION ============ */
+const UNIV="Université Akli Mouhand Oulhadj — Événement Octobre Rose";   // <-- modifie ce nom
+/* ============================================ */
+
+const $=s=>document.querySelector(s);
+const COL={nour:'#fbbf24',amira:'#f472b6',doc:'#7dd3fc',you:'#c4b5fd'};
+
+/* ---------- LANGUES / i18n (FR · EN · AR) ---------- */
+let lang='fr',chIdx=null,lastEnd=null;
+const LN={fr:'Français',en:'English',ar:'العربية'};
+const NM={fr:{nour:'Nour',amira:'Amira',doc:'Dr Bensalem',you:'Toi'},en:{nour:'Nour',amira:'Amira',doc:'Dr Bensalem',you:'You'},ar:{nour:'نور',amira:'أميرة',doc:'د. بن سالم',you:'أنت'}};
+const NAMES=new Proxy({},{get:(_,k)=>(NM[lang]||NM.fr)[k]});
+const I18N={
+en:{H:{0:"Chapter 1 · A campus in pink",17:"Chapter 2 · Nour's night",24:"Chapter 3 · Behind the university",42:"Chapter 4 · Dr Bensalem's office",64:"End A · The right reflex",71:"End B · One step at a time",76:"End C · Too late"},
+S:{
+0:"Thursday, October 15. It's Pink October on campus: pink ribbons on the gates, posters, balloons… and an awareness stand in front of the library.",
+1:"You walk up to the stand. Amira, 21, is handing out leaflets with a big smile.",
+2:"Hi! Come on, don't be shy, I don't bite. I'm Amira, a volunteer at this stand. This year I decided to tell my story.",
+3:"A little further away, on a bench, Nour — from the same year as Amira — stares at her phone without really looking at it. She hugs her sweater tight.",
+4:["How do you answer Amira?",["“Tell me, I'm listening.”","Listening is already raising awareness."],["“I don't really have time…”"]],
+5:"No worries. But five minutes of information can change a life. Just five minutes, I promise.",
+6:"Two years ago, doing my self-exam in the shower, I felt a small lump. No pain. Nothing alarming, it seemed.",
+7:"I was scared, like anyone. But I booked an appointment the very next week. That decision changed everything.",
+8:"Today I'm in remission, with regular check-ups. If I had waited, it would be a very different story.",
+9:"Amira… could you stop talking about it in front of everyone?",
+10:"Nour? I… I didn't mean to hurt you.",
+11:"You've been avoiding my messages for weeks. You've lost weight, you look exhausted. Is something going on?",
+12:"I'm just tired. Exams, all that. Leave me alone.",
+13:"Nour grabs her bag and walks away quickly.",
+14:["What do you do?",["Run after Nour","Showing you're there matters."],["Let her go"]],
+15:"You catch up with her in front of the library. She doesn't turn around, but she stops. “Not here… Tomorrow after class, behind the university,” she whispers.",
+16:"We'll let her breathe. But tomorrow we'll go see her: I won't leave her alone with this. Let's meet behind the university, late afternoon.",
+17:"That same evening, in Nour's bedroom. She can't sleep.",
+18:"Eight months… Eight months that this lump has been there.",
+19:"At first it was tiny. I told myself: it'll go away. Now it has grown, it pulls under my arm, and the skin has changed.",
+20:"Mom would say it's hchouma (shameful) to talk about it. My cousin told me herbs would make it disappear by itself…",
+21:"And what if the doctor told me that… No. I won't think about it. Tomorrow, maybe. Tomorrow.",
+22:"Tomorrow became next week. Next week became next month. Nour waited. She is still waiting.",
+23:["Why do people delay seeing a doctor?",["Fear of the diagnosis: we prefer not to know.","Taboo and shame (“hchouma”), especially when it's about the body.","Hoping it will “go away on its own”.","Herbal remedies or advice from relatives instead of medical advice.","Not knowing which signs to watch for."],"Every month of waiting counts. Breast cancer caught early is far easier to treat."],
+24:"The next day, late afternoon. Nour is already there, arms crossed. She clearly hasn't slept.",
+25:"Thank you for coming, Nour.",
+26:"I came because running away was getting worse. But I'm not sure I want to talk about it.",
+27:["How do you start the conversation?",["“Are you afraid of something? We're here, no judgment.”","Non-judgmental listening opens the door."],["“If you have a health problem, just go to the doctor.”"]],
+28:"You think I don't know that?! Easy to say when you're not scared.",
+29:"Nour, nobody is judging you. I was scared too. Just tell us what scares you most.",
+30:"There's a lump in my left breast. For eight months. It has grown, it hurts sometimes, and the skin has changed… like orange peel.",
+31:"Eight months?!",
+32:"Nour… it's nothing to be ashamed of. But you have to see a doctor. Fast.",
+33:"What if it's already too late?",
+34:["Nour cries, waiting for your answer…",["“A diagnosis isn't a sentence. The earlier you act, the more options you have — even now.”","Reassuring without lying."],["“I'm coming with you. You won't go alone.”","Being accompanied makes the difference."],["“Honestly, it's better not to think about it too much.”","Avoiding the subject means delaying even more."]],
+35:"…You're right. I'll wait a little longer.",
+36:"No! We're not waiting anymore.",
+37:"Nour, look at me. Two years ago I was scared too. Fear heals no one. An appointment does.",
+38:"…Do you really think there are still solutions?",
+39:"I don't just think so, I know: I lived it. But we have to start today.",
+40:"I'll take you to Dr Bensalem, he's the one who followed me. He's calm, he explains everything, he doesn't judge.",
+41:"Okay… But I'm shaking.",
+42:"Hello Nour, hello Amira. Please sit down. Here, nobody judges you. Tell me everything, at your own pace.",
+43:"I've had a lump in my breast for eight months… and I waited. I'm sorry.",
+44:"Thank you for telling me: that was the hardest part. I'll examine you, then we'll do an ultrasound, a mammogram and a biopsy to know exactly what it is.",
+45:"A few days later, the results arrive. Nour is back, with Amira beside her.",
+46:"Nour, I'll be honest because you deserve it: it's breast cancer, and it is more advanced than it would have been eight months ago.",
+47:"So… it's too late?",
+48:"No. It's not too late to act. Depending on the tumor type and spread: surgery, chemotherapy, radiotherapy, hormone therapy, targeted therapies. Treatment will be heavier than if you had come earlier, but it exists, and it helps many patients.",
+49:"It's not your fault you were afraid. But now, every week counts. And herbs never replace treatment: some can even interfere with medication.",
+50:"Amira… how did you do it?",
+51:"Look at these two journeys. Same disease, same age, two different decisions.",
+53:"I'm no braver than you, Nour. I just saw a doctor earlier.",
+54:"And you helped Nour walk through that door: you're part of the prevention chain. Let's see what you remember — true or false?",
+55:["If nobody in my family has had breast cancer, I'm not at risk.","False. Most cases affect women with no family history. Everyone should stay alert."],
+56:["Doing a self-exam once a month helps spot a change.","True. It helps you know your breasts and notice anything unusual. But it doesn't replace a medical exam or a mammogram."],
+57:["A lump that doesn't hurt isn't worrying.","False. At first, a breast tumor is often painless. No pain isn't reassuring: every lump must be examined."],
+58:["At 21, you're too young to be concerned.","False. It's rare at that age, but it exists. Knowing your breasts and seeing a doctor at any change is useful at every age."],
+59:["Signs that should alert you",["A lump or thickening in the breast or armpit (even painless)","A change in the size or shape of a breast","Red, dimpled skin or “orange peel” skin","A retracted nipple or unusual discharge","Persistent localized pain that doesn't go away"],"One sign doesn't necessarily mean cancer — but only a doctor can tell. When in doubt: get checked."],
+60:"And so you never forget: here's how to do a self-exam, once a month.",
+61:[["1 · Look","In front of a mirror, arms at your sides: check the shape, size, skin and nipples of each breast. Then raise your arms and repeat."],["2 · Feel standing","In the shower, soapy skin glides better. With the pads of three fingers, make small circles over the whole breast, up to the armpit and collarbone."],["3 · Feel lying down","Lying down, a pillow under your shoulder, arm behind your head: repeat the same movement, covering the whole breast, in a spiral or top to bottom."],["4 · Every month","A few days after your period ends (a fixed date after menopause). Remember what's normal for you — and see a doctor at any change."]],
+62:"Nour, the time has come to decide. We can start your treatment. What do you think?",
+64:"Yes. Let's start. Tomorrow, if possible. I've already lost eight months being afraid.",
+65:"Then we start this week. You are not alone on this journey.",
+66:"Nour tells her family. Her mother cries, then hugs her tight. The months are long, the treatments tiring, but Nour moves forward, surrounded.",
+67:"A year later. Pink October again. At the stand, a pink ribbon on her jacket, Nour hands out leaflets.",
+68:"I lost eight months to fear. I don't want anyone else to make the same mistake. Look, feel, see a doctor. Not tomorrow: today.",
+69:"And we say it together. Every Pink October.",
+71:"I… I'm willing to start. But give me a few days to tell my family.",
+72:"A few days, fine. No more. Every week counts, but the most important thing is that you're here.",
+73:"Nour waited two weeks before starting treatment. Two weeks too many, perhaps. But she's on her way, with Amira and her family behind her.",
+74:"One step at a time. And we don't give up.",
+76:"I… I'll think about it. I'm not ready.",
+77:"I understand. My door stays open. But I must be clear: the longer you wait, the more complicated treatment gets.",
+78:"Nour leaves the office without making an appointment. The days go by.",
+79:"Weeks pass. Nour stays silent, hides her pain, tries herbal teas and home remedies. Amira calls, but Nour no longer answers.",
+80:"Left untreated, the disease has spread to the rest of her body. When Nour finally reaches the hospital, as an emergency, it is too late to cure her.",
+81:"Nour died a few weeks later. She was 21.",
+82:"She was afraid, and we didn't manage to convince her in time… Eight months of silence. Eight months we can never get back.",
+83:"This story is fiction, but it happens in real life: breast cancer found too late because of fear, taboo and silence. You can act."}},
+ar:{H:{0:"الفصل 1 · حرم جامعي بالوردي",17:"الفصل 2 · ليلة نور",24:"الفصل 3 · خلف الجامعة",42:"الفصل 4 · عيادة الدكتور بن سالم",64:"النهاية أ · رد الفعل الصحيح",71:"النهاية ب · خطوة بعد خطوة",76:"النهاية ج · بعد فوات الأوان"},
+S:{
+0:"الخميس 15 أكتوبر. إنه أكتوبر الوردي في الحرم الجامعي: أشرطة وردية على الأسوار، ملصقات، بالونات… وركن للتوعية أمام المكتبة.",
+1:"تقترب من الركن. أميرة، 21 سنة، توزّع المطويات بابتسامة عريضة.",
+2:"مرحبًا! تعالَ، لا تخف، لا أعضّ. أنا أميرة، متطوعة في هذا الركن. هذه السنة قررت أن أروي قصتي.",
+3:"على مقعد أبعد قليلًا، نور — من نفس دفعة أميرة — تحدّق في هاتفها دون أن تنظر إليه فعلًا، وتضمّ سترتها إلى صدرها.",
+4:["بماذا ترد على أميرة؟",["«احكي لي، أنا أسمعك.»","الإصغاء هو بحد ذاته توعية."],["«ليس لدي وقت كثير…»"]],
+5:"لا بأس. لكن خمس دقائق من المعلومات قد تغيّر حياة. خمس دقائق فقط، أعدك.",
+6:"قبل سنتين، وأنا أفحص ثديي ذاتيًا تحت الدش، لمست كتلة صغيرة. بلا ألم. لا شيء مقلق في الظاهر.",
+7:"خفت، مثل أي شخص. لكنني حجزت موعدًا في الأسبوع التالي مباشرة. هذا القرار غيّر كل شيء.",
+8:"اليوم أنا في مرحلة الشفاء مع متابعة منتظمة. لو انتظرت، لكانت القصة مختلفة تمامًا.",
+9:"أميرة… هل يمكنك التوقف عن الحديث عن هذا أمام الجميع؟",
+10:"نور؟ أنا… لم أقصد أن أجرحك.",
+11:"منذ أسابيع وأنتِ تتجنبين رسائلي. فقدتِ وزنك وتبدين منهكة. هل يحدث شيء؟",
+12:"أنا متعبة فقط. الامتحانات وكل هذا. اتركوني وشأني.",
+13:"تحمل نور حقيبتها وتبتعد بخطى سريعة.",
+14:["ماذا تفعل؟",["الركض خلف نور","إظهار أنك موجود يهمّ."],["تركها تذهب"]],
+15:"تلحق بها أمام المكتبة. لا تلتفت، لكنها تتوقف. تهمس: «ليس هنا… غدًا بعد الدروس، خلف الجامعة.»",
+16:"سنتركها تلتقط أنفاسها. لكن غدًا سنذهب إليها: لن أتركها وحدها مع هذا. لنلتقِ خلف الجامعة في آخر النهار.",
+17:"في المساء نفسه، في غرفة نور. لا تستطيع النوم.",
+18:"ثمانية أشهر… ثمانية أشهر وهذه الكتلة موجودة.",
+19:"في البداية كانت صغيرة جدًا. قلت لنفسي: ستزول. الآن كبرت، وتشدّني تحت الإبط، وتغيّر لون الجلد.",
+20:"ماما ستقول إنه عيب الحديث عن هذا. ابنة عمي قالت إن الأعشاب ستجعلها تختفي وحدها…",
+21:"وماذا لو قال لي الطبيب إن… لا. لن أفكر في ذلك. غدًا ربما. غدًا.",
+22:"صار الغد الأسبوع القادم. وصار الأسبوع القادم الشهر القادم. انتظرت نور. وما زالت تنتظر.",
+23:["لماذا يؤجل الناس زيارة الطبيب؟",["الخوف من التشخيص: نفضّل ألّا نعرف.","التابو والخجل («عيب»)، خاصة حين يتعلق الأمر بالجسد.","الأمل في أن «يزول من تلقاء نفسه».","الأعشاب ونصائح المحيط بدل الرأي الطبي.","قلة المعلومات عن العلامات التي يجب الانتباه لها."],"كل شهر انتظار له ثمن. سرطان الثدي المكتشف مبكرًا يُعالَج بشكل أفضل بكثير."],
+24:"في اليوم التالي، آخر النهار. نور هناك أصلًا، ذراعاها متقاطعتان. من الواضح أنها لم تنم.",
+25:"شكرًا لأنك أتيتِ يا نور.",
+26:"أتيت لأن الهروب صار أسوأ. لكنني لست متأكدة أنني أريد الحديث.",
+27:["كيف تبدأ الحديث؟",["«هل تخافين من شيء؟ نحن معكِ دون أي حكم.»","الإصغاء دون حكم يفتح الباب."],["«إن كانت لديك مشكلة صحية فاذهبي إلى الطبيب وكفى.»"]],
+28:"تظن أنني لا أعرف ذلك؟! من السهل قول هذا حين لا تكون خائفًا.",
+29:"نور، لا أحد يحكم عليكِ. أنا أيضًا خفت. قولي لنا فقط ما الذي يخيفك أكثر.",
+30:"هناك كتلة في ثديي الأيسر. منذ ثمانية أشهر. كبرت، وأتألم أحيانًا، وتغيّر الجلد… كقشرة البرتقال.",
+31:"ثمانية أشهر؟!",
+32:"نور… هذا ليس عيبًا. لكن يجب أن تستشيري الطبيب. بسرعة.",
+33:"وماذا لو كان قد فات الأوان؟",
+34:["تبكي نور وهي تنتظر جوابك…",["«التشخيص ليس حكمًا. كلما تحرّكتِ مبكرًا زادت الحلول — حتى الآن.»","طمأنة بلا كذب."],["«سآتي معكِ. لن تذهبي وحدك.»","المرافقة تصنع الفرق."],["«بصراحة، الأفضل ألّا تفكري كثيرًا في الأمر.»","تجنّب الموضوع يعني تأخيرًا إضافيًا."]],
+35:"…معك حق. سأنتظر قليلًا بعد.",
+36:"لا! لن ننتظر بعد الآن.",
+37:"نور، انظري إليّ. قبل سنتين كنت خائفة أيضًا. الخوف لا يشفي أحدًا. أما الموعد فيشفي.",
+38:"…هل تظنين حقًا أن هناك حلولًا بعد؟",
+39:"لا أظن فقط، بل أعرف: عشت ذلك. لكن يجب أن نبدأ اليوم.",
+40:"سآخذك إلى الدكتور بن سالم، هو من تابعني. هادئ، يشرح كل شيء، ولا يحكم.",
+41:"حسنًا… لكنني أرتجف.",
+42:"أهلًا نور، أهلًا أميرة. تفضّلا بالجلوس. هنا لا أحد يحكم عليكما. احكي لي كل شيء، على راحتك.",
+43:"لدي كتلة في الثدي منذ ثمانية أشهر… وقد انتظرت. أنا آسفة.",
+44:"شكرًا لأنك أخبرتني: كان ذلك أصعب جزء. سأفحصك، ثم نجري فحصًا بالموجات فوق الصوتية، وماموغرافي، وخزعة لنعرف بالضبط ما الأمر.",
+45:"بعد أيام قليلة تصل النتائج. نور عادت وأميرة بجانبها.",
+46:"نور، سأكون صريحًا لأنك تستحقين ذلك: إنه سرطان الثدي، وهو أكثر تقدمًا مما كان عليه قبل ثمانية أشهر.",
+47:"إذن… فات الأوان؟",
+48:"لا. لم يفت الأوان للتحرك. حسب نوع الورم وانتشاره: جراحة، علاج كيميائي، علاج إشعاعي، علاج هرموني، علاجات موجّهة. سيكون العلاج أثقل مما لو جئتِ مبكرًا، لكنه موجود ويساعد كثيرًا من المريضات.",
+49:"ليس خطؤك أنك خفتِ. لكن الآن كل أسبوع مهم. والأعشاب لا تعوّض العلاج أبدًا: بعضها قد يتعارض مع الأدوية.",
+50:"أميرة… كيف فعلتِ أنتِ؟",
+51:"انظري إلى هذين المسارين. المرض نفسه، السن نفسه، قراران مختلفان.",
+53:"لست أشجع منك يا نور. فقط استشرت الطبيب أبكر.",
+54:"وأنت ساعدت نور على عبور هذا الباب: أنت جزء من سلسلة الوقاية. لنرَ ما تذكّرته — صح أم خطأ؟",
+55:["إذا لم يُصَب أحد في عائلتي بسرطان الثدي، فلا خطر عليّ.","خطأ. أغلب الحالات تصيب نساءً بلا سوابق عائلية. على الجميع أن يبقى منتبهًا."],
+56:["الفحص الذاتي مرة كل شهر يساعد على اكتشاف أي تغيّر.","صح. يساعدك على معرفة ثدييك وملاحظة أي شيء غير عادي. لكنه لا يغني عن الفحص الطبي ولا عن الماموغرافي."],
+57:["الكتلة التي لا تؤلم ليست مقلقة.","خطأ. في البداية يكون ورم الثدي غالبًا بلا ألم. غياب الألم لا يُطمئن: كل كتلة يجب فحصها."],
+58:["في سن 21 أنتِ صغيرة جدًا لتكوني معنية.","خطأ. الأمر نادر في هذه السن لكنه موجود. معرفة ثدييك واستشارة الطبيب عند أي تغيير مفيدة في كل الأعمار."],
+59:["علامات يجب أن تنبّهك",["كتلة أو تصلّب في الثدي أو تحت الإبط (حتى دون ألم)","تغيّر في حجم الثدي أو شكله","جلد أحمر أو متغضّن أو بمظهر «قشرة البرتقال»","انسحاب الحلمة أو إفرازات غير معتادة","ألم مستمر في موضع محدد لا يزول"],"علامة واحدة لا تعني بالضرورة سرطانًا — لكن الطبيب وحده يستطيع الجزم. عند الشك: استشر."],
+60:"ولكي لا تنسي أبدًا: إليك طريقة الفحص الذاتي، مرة كل شهر.",
+61:[["1 · الملاحظة","أمام المرآة، والذراعان على الجانبين: لاحظي شكل كل ثدي وحجمه وجلده وحلمته. ثم ارفعي ذراعيك وأعيدي."],["2 · اللمس واقفة","تحت الدش، الجلد المصبّن ينزلق أفضل. بأطراف ثلاثة أصابع، ارسمي دوائر صغيرة على الثدي كله حتى الإبط وعظم الترقوة."],["3 · اللمس مستلقية","مستلقية، ووسادة تحت الكتف والذراع خلف الرأس: أعيدي الحركة نفسها لتغطية الثدي كله، بشكل حلزوني أو من الأعلى إلى الأسفل."],["4 · كل شهر","بعد أيام قليلة من نهاية الدورة (تاريخ ثابت بعد سن اليأس). تذكّري ما هو طبيعي عندك — واستشيري عند أي تغيير."]],
+62:"نور، حان وقت القرار. يمكننا أن نبدأ علاجك. ما رأيك؟",
+64:"نعم. لنبدأ. غدًا إن أمكن. لقد أضعت ثمانية أشهر وأنا خائفة.",
+65:"إذن نبدأ هذا الأسبوع. لستِ وحدك في هذه الرحلة.",
+66:"تخبر نور عائلتها. تبكي أمها ثم تضمّها بقوة. الأشهر طويلة والعلاجات مُتعبة، لكن نور تتقدم، محاطة بالأحبّة.",
+67:"بعد سنة. أكتوبر الوردي من جديد. عند الركن، وعلى سترتها شريط وردي، توزّع نور المطويات.",
+68:"أضعت ثمانية أشهر بسبب الخوف. لا أريد أن يرتكب أحد آخر الخطأ نفسه. لاحظي، تحسّسي، استشيري. ليس غدًا: اليوم.",
+69:"ونقولها معًا. في كل أكتوبر وردي.",
+71:"أنا… أقبل أن أبدأ. لكن أمهلوني بضعة أيام لأخبر عائلتي.",
+72:"بضعة أيام، حسنًا. ليس أكثر. كل أسبوع مهم، لكن الأهم أنك هنا.",
+73:"انتظرت نور أسبوعين قبل أن تبدأ علاجها. أسبوعان زائدان ربما. لكنها في الطريق، وعائلتها وأميرة خلفها.",
+74:"خطوة بعد خطوة. ولن نستسلم.",
+76:"أنا… سأفكر في الأمر. لست مستعدة.",
+77:"أتفهّم. بابي مفتوح دائمًا. لكن يجب أن أكون واضحًا: كلما مرّ الوقت، تعقّد العلاج.",
+78:"تغادر نور العيادة دون أن تحجز موعدًا. تمرّ الأيام.",
+79:"تمرّ الأسابيع. تصمت نور، وتخفي ألمها، وتجرّب الأعشاب والوصفات المنزلية. أميرة تتصل، لكن نور لم تعد تردّ.",
+80:"المرض، بلا علاج، انتشر في بقية الجسد. وحين تصل نور أخيرًا إلى المستشفى في حالة طارئة، يكون الأوان قد فات لشفائها.",
+81:"ماتت نور بعد أسابيع قليلة. كانت في الحادية والعشرين.",
+82:"كانت خائفة، ونحن لم ننجح في إقناعها في الوقت المناسب… ثمانية أشهر من الصمت. ثمانية أشهر لن نستعيدها أبدًا.",
+83:"هذه القصة خيالية، لكنها تحدث في الواقع: سرطان ثدي يُكتشف متأخرًا بسبب الخوف والتابو والصمت. أنت تستطيع أن تتحرك."}}
+};
+const UI={
+fr:{doc:"Avant qu'il soit tard — Visual Novel Octobre Rose",kick:"Octobre Rose · Cancer du sein",ttl:"Avant qu'il<br>soit tard",sub:"Une décision qui change tout.",start:"Commencer",how:"Comment jouer · À propos",lc:"FR",tLog:"Journal des dialogues",tSnd:"Son / musique",tFs:"Plein écran",tInfo:"Aide et informations",tLang:"Langue",close:"Fermer",cont:"Continuer",tf:"Vrai ou faux",t:"Vrai",f:"Faux",quiz:"Quiz : ",right:"juste",wrong:"raté",bravo:"Bravo ! ",notq:"Pas tout à fait. ",auto:"Autopalpation",prev:"← Précédent",nextb:"Suivant →",fin:"Terminer",autoD:"L'autopalpation ne remplace pas l'examen par un médecin.",
+cmpT:"Deux parcours, une seule différence : le temps",cmpAn:"Amira · a consulté vite",cmpNn:"Nour · a attendu",
+cmpA:[["Jour 0","Elle sent une petite boule en s'auto-palpant."],["Jour 7","Elle consulte : examen, échographie, mammographie."],["Jour 15","Diagnostic à un stade précoce."],["Ensuite","Traitement ciblé et plus léger."],["Aujourd'hui","Suivi régulier, vie normale."]],
+cmpN:[["Mois 0","Elle sent une boule et pense : « ça passera »."],["Mois 3","La boule grossit. Elle se tait, par peur et par tabou."],["Mois 6","Douleurs, peau modifiée. Elle cache toujours."],["Mois 8","Elle consulte enfin : maladie plus avancée."],["Ensuite","Traitement plus lourd et plus long."]],
+cmpF:"Histoires fictives, inspirées de situations réelles.",narr:"Narration",lang:"Choisir la langue",logE:"Rien pour l'instant.",logT:"Journal",
+eA:["Fin A","Le bon réflexe","Tu as su écouter, rassurer et accompagner. Grâce à toi, Nour a commencé son traitement sans tarder."],
+eB:["Fin B","Un pas après l'autre","Nour a fini par accepter les soins, mais avec du retard. Chaque semaine gagnée compte : la prochaine fois, agis encore plus tôt."],
+eC:["Fin C","Trop tard","Nour n'a pas osé commencer son traitement. La maladie, découverte trop tard, s'est étendue : Nour est morte à 21 ans."],
+score:"Score de sensibilisation",stat:"Détecté à un stade précoce, le taux de survie à 5 ans dépasse 90 %.",statC:"Un cancer du sein dépisté tôt guérit dans la grande majorité des cas ; dépisté tard, les chances de guérison diminuent fortement.",
+keepT:"À retenir",keep:["🪞 <b>Observe et palpe</b> tes seins une fois par mois.","🩺 <b>Consulte sans attendre</b> au moindre changement : boule, peau, mamelon, aisselle.","📅 Fais-toi <b>examiner régulièrement</b> par un médecin ; la mammographie se programme avec lui (souvent dès 40 ans, plus tôt en cas d'antécédents familiaux).","🌿 Les plantes et les remèdes <b>ne remplacent pas</b> un traitement.","🤝 <b>Parle-en</b> et accompagne une amie : le tabou retarde les soins."],
+whyT:"Pourquoi cette fin ? Ce que Nour nous apprend",
+why:["😨 <b>La peur et le tabou</b> : pendant huit mois, Nour n'a rien dit, par peur du diagnostic et par « hchouma ».","🌿 <b>Les remèdes à la place des soins</b> : les plantes et les tisanes ne soignent pas un cancer.","🤐 <b>Le silence de l'entourage</b> : éviter le sujet, c'est laisser la maladie avancer.","⏳ <b>Chaque semaine perdue</b> : non soignée, la tumeur grossit et peut atteindre d'autres organes (métastases). Guérir devient alors beaucoup plus difficile, parfois impossible."],
+whyF:"Nour n'est pas morte à cause d'une fatalité, mais d'un diagnostic arrivé trop tard. Ce qui aurait pu changer l'histoire : palper chaque mois, consulter dès la première boule, et oser en parler.",
+replay:"↺ Rejouer",about:"À propos",disc:"Cette histoire est une fiction à but éducatif. Elle ne remplace pas l'avis d'un professionnel de santé. Projet de sensibilisation — Octobre Rose",dev:"Développé par",infoT:"Comment jouer",
+info:`<ul><li>Clique (ou touche <b>Espace / Entrée</b>) pour faire avancer le dialogue.</li><li>Tes <b>choix</b> comptent : ils changent la fin (3 fins possibles). Touches 1 / 2 / 3 pour choisir.</li><li>Réponds au quiz pour gagner des points de sensibilisation.</li><li>Boutons en haut : journal, langue, son, plein écran.</li></ul><div class="foot">Histoire fictive à but éducatif pour Octobre Rose. Elle ne remplace pas une consultation médicale : au moindre doute, consulte un médecin ou un centre de dépistage.</div>`},
+en:{doc:"Before It's Too Late — Pink October Visual Novel",kick:"Pink October · Breast Cancer",ttl:"Before It's<br>Too Late",sub:"A decision that changes everything.",start:"Start",how:"How to play · About",lc:"EN",tLog:"Dialogue log",tSnd:"Sound / music",tFs:"Fullscreen",tInfo:"Help and information",tLang:"Language",close:"Close",cont:"Continue",tf:"True or false",t:"True",f:"False",quiz:"Quiz: ",right:"correct",wrong:"missed",bravo:"Well done! ",notq:"Not quite. ",auto:"Self-exam",prev:"← Previous",nextb:"Next →",fin:"Finish",autoD:"A self-exam does not replace an examination by a doctor.",
+cmpT:"Two journeys, one difference: time",cmpAn:"Amira · saw a doctor quickly",cmpNn:"Nour · waited",
+cmpA:[["Day 0","She feels a small lump during a self-exam."],["Day 7","She sees a doctor: exam, ultrasound, mammogram."],["Day 15","Diagnosis at an early stage."],["Then","Targeted, lighter treatment."],["Today","Regular follow-up, normal life."]],
+cmpN:[["Month 0","She feels a lump and thinks: “it'll pass”."],["Month 3","The lump grows. She stays silent, out of fear and taboo."],["Month 6","Pain, changed skin. She still hides it."],["Month 8","She finally sees a doctor: more advanced disease."],["Then","Heavier, longer treatment."]],
+cmpF:"Fictional stories, inspired by real situations.",narr:"Narration",lang:"Choose a language",logE:"Nothing yet.",logT:"Log",
+eA:["End A","The right reflex","You knew how to listen, reassure and accompany. Thanks to you, Nour started her treatment without delay."],
+eB:["End B","One step at a time","Nour finally accepted care, but late. Every week gained counts: next time, act even earlier."],
+eC:["End C","Too late","Nour didn't dare start her treatment. The disease, found too late, spread: Nour died at 21."],
+score:"Awareness score",stat:"Detected at an early stage, the 5-year survival rate exceeds 90%.",statC:"Breast cancer detected early is cured in the vast majority of cases; detected late, the chances of recovery drop sharply.",
+keepT:"Key takeaways",keep:["🪞 <b>Look and feel</b> your breasts once a month.","🩺 <b>See a doctor without waiting</b> at the slightest change: lump, skin, nipple, armpit.","📅 Get <b>examined regularly</b> by a doctor; the mammogram is scheduled with them (often from age 40, earlier with a family history).","🌿 Herbs and home remedies <b>do not replace</b> treatment.","🤝 <b>Talk about it</b> and support a friend: taboo delays care."],
+whyT:"Why this ending? What Nour teaches us",
+why:["😨 <b>Fear and taboo</b>: for eight months, Nour said nothing, afraid of the diagnosis and of “hchouma” (shame).","🌿 <b>Remedies instead of care</b>: herbs and teas do not cure cancer.","🤐 <b>The silence of those around her</b>: avoiding the subject lets the disease advance.","⏳ <b>Every lost week</b>: untreated, the tumor grows and can reach other organs (metastases). Recovery then becomes much harder, sometimes impossible."],
+whyF:"Nour did not die of fate, but of a diagnosis that came too late. What could have changed the story: checking every month, seeing a doctor at the first lump, and daring to talk.",
+replay:"↺ Play again",about:"About",disc:"This story is fiction for educational purposes. It does not replace the advice of a healthcare professional. Awareness project — Pink October",dev:"Developed by",infoT:"How to play",
+info:`<ul><li>Click (or press <b>Space / Enter</b>) to advance the dialogue.</li><li>Your <b>choices</b> matter: they change the ending (3 possible endings). Press 1 / 2 / 3 to choose.</li><li>Answer the quiz to earn awareness points.</li><li>Top buttons: log, language, sound, fullscreen.</li></ul><div class="foot">Fictional educational story for Pink October. It does not replace a medical consultation: at the slightest doubt, see a doctor or a screening center.</div>`},
+ar:{doc:"قبل فوات الأوان — رواية بصرية لأكتوبر الوردي",kick:"أكتوبر الوردي · سرطان الثدي",ttl:"قبل أن<br>يفوت الأوان",sub:"قرار يغيّر كل شيء.",start:"ابدأ",how:"طريقة اللعب · حول",lc:"عربي",tLog:"سجل الحوارات",tSnd:"الصوت / الموسيقى",tFs:"ملء الشاشة",tInfo:"مساعدة ومعلومات",tLang:"اللغة",close:"إغلاق",cont:"متابعة",tf:"صح أم خطأ",t:"صح",f:"خطأ",quiz:"اختبار: ",right:"صحيح",wrong:"خطأ",bravo:"أحسنت! ",notq:"ليس تمامًا. ",auto:"الفحص الذاتي",prev:"→ السابق",nextb:"التالي ←",fin:"إنهاء",autoD:"الفحص الذاتي لا يغني عن فحص الطبيب.",
+cmpT:"مساران، فرق واحد: الوقت",cmpAn:"أميرة · استشارت بسرعة",cmpNn:"نور · انتظرت",
+cmpA:[["اليوم 0","تلمس كتلة صغيرة أثناء الفحص الذاتي."],["اليوم 7","تستشير الطبيب: فحص، موجات فوق صوتية، ماموغرافي."],["اليوم 15","تشخيص في مرحلة مبكرة."],["بعد ذلك","علاج موجّه وأخف."],["اليوم","متابعة منتظمة وحياة طبيعية."]],
+cmpN:[["الشهر 0","تلمس كتلة وتقول: «ستزول»."],["الشهر 3","الكتلة تكبر. تصمت خوفًا وبسبب التابو."],["الشهر 6","آلام وتغيّر في الجلد. وما زالت تخفي."],["الشهر 8","تستشير أخيرًا: المرض أكثر تقدمًا."],["بعد ذلك","علاج أثقل وأطول."]],
+cmpF:"قصص خيالية مستوحاة من حالات حقيقية.",narr:"السرد",lang:"اختر اللغة",logE:"لا شيء حتى الآن.",logT:"السجل",
+eA:["النهاية أ","رد الفعل الصحيح","عرفتَ كيف تُصغي وتطمئن وترافق. بفضلك بدأت نور علاجها دون تأخير."],
+eB:["النهاية ب","خطوة بعد خطوة","قبلت نور العلاج في النهاية، لكن متأخرة. كل أسبوع يُكسب مهم: في المرة القادمة تحرّك أبكر."],
+eC:["النهاية ج","بعد فوات الأوان","لم تجرؤ نور على بدء علاجها. المرض، الذي اكتُشف متأخرًا، انتشر: ماتت نور وهي في الحادية والعشرين."],
+score:"درجة الوعي",stat:"عند اكتشافه مبكرًا، تتجاوز نسبة البقاء على قيد الحياة بعد 5 سنوات 90٪.",statC:"سرطان الثدي المكتشف مبكرًا يُشفى في الغالبية العظمى من الحالات؛ أما المكتشف متأخرًا فتتراجع فرص الشفاء كثيرًا.",
+keepT:"ما يجب تذكّره",keep:["🪞 <b>لاحظي وتحسّسي</b> ثدييك مرة كل شهر.","🩺 <b>استشيري دون انتظار</b> عند أي تغيير: كتلة، جلد، حلمة، إبط.","📅 اطلبي <b>فحصًا طبيًا منتظمًا</b>؛ ويُحدَّد موعد الماموغرافي مع الطبيب (غالبًا من سن 40، وأبكر عند وجود سوابق عائلية).","🌿 الأعشاب والوصفات المنزلية <b>لا تعوّض</b> العلاج.","🤝 <b>تحدثي</b> ورافقي صديقة: التابو يؤخر العلاج."],
+whyT:"لماذا هذه النهاية؟ ما تعلّمنا إياه نور",
+why:["😨 <b>الخوف والتابو</b>: طوال ثمانية أشهر لم تقل نور شيئًا، خوفًا من التشخيص ومن «العيب».","🌿 <b>الوصفات بدل العلاج</b>: الأعشاب والمشروبات لا تشفي السرطان.","🤐 <b>صمت المحيطين بها</b>: تجنّب الموضوع يترك المرض يتقدم.","⏳ <b>كل أسبوع ضائع</b>: دون علاج يكبر الورم وقد يصل إلى أعضاء أخرى (نقائل)، فيصبح الشفاء أصعب بكثير، وأحيانًا مستحيلًا."],
+whyF:"لم تمت نور بسبب قدر محتوم، بل بسبب تشخيص جاء متأخرًا. ما كان يمكن أن يغيّر القصة: الفحص الذاتي كل شهر، واستشارة الطبيب عند أول كتلة، والجرأة على الكلام.",
+replay:"↺ أعد اللعب",about:"حول",disc:"هذه القصة خيالية لغرض تثقيفي ولا تغني عن رأي مختص في الصحة. مشروع توعوي — أكتوبر الوردي",dev:"تطوير",infoT:"طريقة اللعب",
+info:`<ul><li>انقر (أو اضغط <b>Space / Enter</b>) لمتابعة الحوار.</li><li><b>اختياراتك</b> مهمة: فهي تغيّر النهاية (3 نهايات ممكنة). اضغط 1 / 2 / 3 للاختيار.</li><li>أجب عن الاختبار لتكسب نقاط الوعي.</li><li>الأزرار في الأعلى: السجل، اللغة، الصوت، ملء الشاشة.</li></ul><div class="foot">قصة خيالية تثقيفية لأكتوبر الوردي. لا تغني عن الاستشارة الطبية: عند أدنى شك، استشر طبيبًا أو مركزًا للكشف.</div>`}
+};
+const u=k=>{const v=UI[lang]&&UI[lang][k];return v===undefined?UI.fr[k]:v;};
+const S=n=>lang==='fr'?null:((I18N[lang]||{}).S||{})[n._i];
+const chL=n=>lang==='fr'?n.ch:(((I18N[lang]||{}).H||{})[n._i]||n.ch);
+function tr(n){const e=S(n);return e?(typeof e==='string'?e:e[0]):n.t;}
+function ctr(k){const e=S(cur),c=cur.choices[k],x=e&&e[k+1];return x?[x[0],x[1]||c.fb]:[c.t,c.fb];}
+const phone=(a,b)=>'<bdi dir="ltr">'+a+'</bdi> | <bdi dir="ltr">'+b+'</bdi>';
+function credits(){return '<div class="cr"><b>'+u('dev')+' :</b><span>Nabil HAMMOUM<br>'+phone('+213 553 02 15 49','nabilhammoum8@gmail.com')+'</span><span>Amrane AHMED ALI<br>'+phone('+213 542 51 29 70','contact.amrane@gmail.com')+'</span><em dir="ltr">All rights reserved © 2026</em></div>';}
+
+/* ---------- AUDIO ---------- */
+let audio=null,master=null,musicTimer=null,soundOn=true,ci=0;
+function ac(){
+  if(!audio){try{audio=new (window.AudioContext||window.webkitAudioContext)();master=audio.createGain();master.gain.value=soundOn?1:0;master.connect(audio.destination);}catch(e){}}
+  if(audio&&audio.state==='suspended')audio.resume();
+  return audio;
+}
+function tone(f,t,d,g,type){const a=ac();if(!a)return;const o=a.createOscillator(),v=a.createGain();o.type=type||'sine';o.frequency.value=f;v.gain.setValueAtTime(.0001,t);v.gain.linearRampToValueAtTime(g,t+Math.min(.04,d/3));v.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(v);v.connect(master);o.start(t);o.stop(t+d+.05);}
+function pad(f,t,d,g){const a=ac();if(!a)return;const o=a.createOscillator(),v=a.createGain();o.type='sine';o.frequency.value=f;v.gain.setValueAtTime(.0001,t);v.gain.linearRampToValueAtTime(g,t+2);v.gain.linearRampToValueAtTime(.0001,t+d);o.connect(v);v.connect(master);o.start(t);o.stop(t+d+.1);}
+const CH=[[110,220,261.63,329.63],[87.31,174.61,220,261.63],[130.81,261.63,329.63,392],[98,196,246.94,293.66]];
+function startMusic(){
+  if(musicTimer||!ac())return;
+  const play=()=>{const t=audio.currentTime+.05,c=CH[ci%4];c.forEach(f=>pad(f,t,7,.022));[0,1.25,2.5,3.75].forEach((o,k)=>tone(c[1+(k%3)]*2,t+o+.2,2.2,.012,'triangle'));ci++;};
+  play();musicTimer=setInterval(play,5600);
+}
+function sfx(k){const a=ac();if(!a)return;const t=a.currentTime;
+  if(k==='pop'){tone(660,t,.18,.06);tone(880,t+.08,.2,.05);}
+  if(k==='chime'){[523,659,784].forEach((f,j)=>tone(f,t+j*.12,.6,.05));}
+  if(k==='ok'){tone(784,t,.25,.06);tone(988,t+.1,.4,.06);}
+  if(k==='ko'){tone(247,t,.4,.07,'triangle');tone(196,t+.15,.5,.06,'triangle');}
+}
+
+/* ---------- PERSONNAGES (SVG) ---------- */
+const SKIN={nour:['#f2c6a5','#e3ac86'],amira:['#ebbf9a','#d9a47c'],doc:['#dba982','#c58f66']};
+const RIB=(x,y,s)=>`<g transform="translate(${x} ${y}) scale(${s||1})"><path d="M0 -14 C-12 -32 -30 -14 -12 0 L10 26 M0 -14 C12 -32 30 -14 12 0 L-10 26" stroke="#ff4fa3" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+function char(id,emo,fl){
+  emo=emo||'neutral';fl=fl||'';
+  const [sk,sd]=SKIN[id],ink='#2a1810';
+  const brow={neutral:['M110 176 Q124 171 138 176','M162 176 Q176 171 190 176'],happy:['M110 172 Q124 165 138 172','M162 172 Q176 165 190 172'],sad:['M108 182 Q124 176 138 167','M162 167 Q176 176 192 182'],worried:['M109 178 Q124 174 138 168','M162 168 Q176 174 191 178'],serious:['M110 170 L138 178','M162 178 L190 170'],surprised:['M110 163 Q124 156 138 163','M162 163 Q176 156 190 163']};
+  const bm={neutral:'neutral',happy:'happy',smile:'happy',sad:'sad',cry:'sad',worried:'worried',serious:'serious',surprised:'surprised'}[emo]||'neutral';
+  const bc=id==='doc'?'#1f1a1a':id==='nour'?'#2a1710':'#3a2a22';
+  const brows=`<g stroke="${bc}" stroke-width="${id==='doc'?5:3.6}" fill="none" stroke-linecap="round"><path d="${brow[bm][0]}"/><path d="${brow[bm][1]}"/></g>`;
+  const eye=cx=>{
+    if(emo==='happy')return `<path d="M${cx-10} 202 Q${cx} 189 ${cx+10} 202" stroke="${ink}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+    const ry=emo==='surprised'?12.5:(emo==='sad'||emo==='cry')?9:10.5,pr=emo==='surprised'?4:5.6;
+    return `<g class="eye"><ellipse cx="${cx}" cy="198" rx="9.8" ry="${ry}" fill="#fff"/><circle cx="${cx}" cy="199" r="${pr}" fill="#3b2417"/><circle cx="${cx}" cy="199" r="${pr*.55}" fill="#120a06"/><circle cx="${cx+2}" cy="196" r="1.9" fill="#fff"/><path d="M${cx-10.5} 189 Q${cx} 184.5 ${cx+10.5} 189" stroke="${ink}" stroke-width="3" fill="none" stroke-linecap="round"/></g>`;
+  };
+  const ln='stroke="#8b3a3a" stroke-width="3.5" fill="none" stroke-linecap="round"';
+  const M={neutral:`<path d="M138 243 Q150 246 162 243" ${ln}/>`,
+    smile:`<path d="M133 238 Q150 253 167 238" ${ln}/>`,
+    happy:`<path d="M131 236 Q150 266 169 236 Q150 244 131 236Z" fill="#8b2e3a"/><path d="M139 249 Q150 256 161 249 Q150 253 139 249Z" fill="#ff8fa3"/>`,
+    sad:`<path d="M137 249 Q150 237 163 249" ${ln}/>`,
+    worried:`<path d="M138 247 Q150 241 162 247" ${ln}/>`,
+    serious:`<path d="M139 244 L161 244" ${ln}/>`,
+    surprised:`<ellipse cx="150" cy="247" rx="7" ry="9" fill="#7a2631"/>`};
+  M.cry=M.sad;
+  const blush=`<ellipse cx="112" cy="224" rx="12" ry="7" fill="#ff7b9c" opacity="${(emo==='happy'||emo==='smile')?.38:.2}"/><ellipse cx="188" cy="224" rx="12" ry="7" fill="#ff7b9c" opacity="${(emo==='happy'||emo==='smile')?.38:.2}"/>`;
+  const nose=`<path d="M148 212 Q146 222 153 223" stroke="${sd}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+  const tears=emo==='cry'?`<path class="tear" d="M121 212 q-5 9 0 13 q5 -4 0 -13z" fill="#8fd3ff"/><path class="tear t2" d="M179 212 q-5 9 0 13 q5 -4 0 -13z" fill="#8fd3ff"/>`:'';
+  const feat=blush+nose+brows+eye(125)+eye(175)+`<g class="mouth">${M[emo]||M.neutral}</g>`+tears;
+  const ears=`<circle cx="88" cy="206" r="11" fill="${sk}"/><circle cx="212" cy="206" r="11" fill="${sk}"/>`;
+  const neck=`<path d="M126 262 L126 340 Q150 362 174 340 L174 262Z" fill="${sd}"/>`;
+  const head=`<ellipse cx="150" cy="200" rx="62" ry="72" fill="${sk}"/>`;
+  let back='',body='',front='',glasses='';
+  if(id==='nour'){
+    back=`<path d="M82 205 C58 95 112 48 150 48 C190 48 244 95 218 205 L240 392 C200 410 100 410 60 392Z" fill="#2a1710"/>`;
+    body=`<path d="M18 520 C18 405 58 348 118 332 L182 332 C242 348 282 405 282 520Z" fill="#e0a64f"/><path d="M105 335 Q150 372 195 335 L205 330 Q150 395 95 330Z" fill="#c98a32"/><path d="M130 362 L128 412 M170 362 L172 412" stroke="#fff" stroke-width="4" stroke-linecap="round"/>`+(fl==='ribbon'?RIB(96,448,1.1):'');
+    front=`<path d="M86 200 C78 108 124 72 152 74 C196 74 224 112 214 200 C206 160 190 126 150 120 C118 124 98 150 86 200Z" fill="#2a1710"/><path d="M120 100 Q150 86 185 104" stroke="#52301f" stroke-width="4" fill="none" opacity=".7" stroke-linecap="round"/><path d="M86 206 C66 270 70 345 84 408 C104 372 110 290 100 222Z" fill="#2a1710"/><path d="M214 206 C234 270 230 345 216 408 C196 372 190 290 200 222Z" fill="#2a1710"/>`;
+  }
+  if(id==='amira'){
+    body=`<path d="M18 520 C18 405 58 348 118 332 L182 332 C242 348 282 405 282 520Z" fill="#f6ebdd"/>`+RIB(98,462,1.15);
+    front=`<path fill-rule="evenodd" d="M150 40 C92 40 60 98 64 190 C66 262 58 340 20 402 Q150 444 280 402 C242 340 234 262 236 190 C240 98 208 40 150 40Z M150 128 C114 128 96 160 96 200 C96 248 120 276 150 276 C180 276 204 248 204 200 C204 160 186 128 150 128Z" fill="#7c6bd6"/><path d="M110 70 Q150 50 195 78" stroke="#a89ef2" stroke-width="5" fill="none" opacity=".7" stroke-linecap="round"/><path d="M72 250 C90 330 62 384 38 402 M228 250 C210 330 238 384 262 402" stroke="#5f4fb8" stroke-width="3" fill="none" opacity=".55"/>`;
+  }
+  if(id==='doc'){
+    body=`<path d="M12 520 C12 400 55 345 118 330 L182 330 C245 345 288 400 288 520Z" fill="#f8fafc"/><path d="M120 330 L150 424 L180 330 Q150 352 120 330Z" fill="#2aa5a0"/><path d="M118 330 L98 440 L150 404Z M182 330 L202 440 L150 404Z" fill="#e3e8f0"/><path d="M112 336 C98 402 120 446 150 446 C180 446 202 402 188 336" stroke="#3b3b4a" stroke-width="5" fill="none"/><circle cx="150" cy="452" r="11" fill="#9ca3af" stroke="#3b3b4a" stroke-width="3"/>`+RIB(222,430,1);
+    front=`<path d="M86 190 C80 100 120 66 152 66 C190 66 222 100 214 190 C208 150 196 118 150 112 C112 116 94 150 86 190Z" fill="#1f1a1a"/><path d="M86 190 C88 160 94 146 100 138 L104 168Z M214 190 C212 160 206 146 200 138 L196 168Z" fill="#8b8b95"/>`;
+    glasses=`<g fill="#bfe8ff" fill-opacity=".14" stroke="#2f2f3a" stroke-width="3"><rect x="103" y="184" width="45" height="30" rx="12"/><rect x="152" y="184" width="45" height="30" rx="12"/></g><path d="M148 196 Q150 192 152 196 M103 192 L90 188 M197 192 L210 188" stroke="#2f2f3a" stroke-width="3" fill="none"/>`;
+  }
+  const dly={nour:0,amira:-1.7,doc:-3.1}[id];
+  return `<svg viewBox="0 0 300 520" xmlns="http://www.w3.org/2000/svg" style="--d:${dly}s"><g class="all" style="animation-delay:${dly}s">${back}${body}${neck}${ears}${head}${feat}${glasses}${front}</g></svg>`;
+}
+
+/* ---------- DÉCORS ---------- */
+function campus(v){
+  const P={
+    day:{s1:'#8fd3ff',s2:'#ffe2ee',sun:'#fff6c9',sx:1280,sy:190,b:'#f4e4d4',b2:'#e0c9b3',w:'#78a9d8',t1:'#3f9a62',t2:'#58b878',g:'#9fd8a2',p:'#eadcca',ov:0,fest:1},
+    eve:{s1:'#2f2a66',s2:'#f7a072',sun:'#ffd08a',sx:1250,sy:520,b:'#b79bb0',b2:'#8a6f8f',w:'#ffd27a',t1:'#25514f',t2:'#2f6a60',g:'#466a58',p:'#7d6c6a',ov:.12,fest:1,bench:1},
+    dawn:{s1:'#fdb9d4',s2:'#fff0c4',sun:'#fff8d6',sx:800,sy:470,b:'#f8e9df',b2:'#e8d0c0',w:'#9fcdf0',t1:'#4ea96e',t2:'#6cc48a',g:'#b2e3ae',p:'#f1e4d2',ov:0,fest:1},
+    grey:{s1:'#7f869c',s2:'#c9ccd8',sun:'#e7e9f0',sx:1250,sy:220,b:'#aeacba',b2:'#8e8c9e',w:'#c5cde2',t1:'#4b665f',t2:'#5c7a72',g:'#7b9387',p:'#a8a2a0',ov:.1,fest:0,bench:1}
+  }[v];
+  const tree=(x,y,s)=>`<g transform="translate(${x} ${y}) scale(${s})"><rect x="-14" y="-10" width="28" height="130" rx="8" fill="#6b4a3a"/><circle cx="0" cy="-70" r="80" fill="${P.t1}"/><circle cx="-60" cy="-30" r="58" fill="${P.t2}"/><circle cx="62" cy="-34" r="60" fill="${P.t1}"/><circle cx="6" cy="-120" r="54" fill="${P.t2}"/></g>`;
+  let cols='',wins='';
+  for(let k=0;k<8;k++)cols+=`<rect x="${360+k*100}" y="382" width="34" height="318" fill="#fff" opacity=".5"/>`;
+  for(let k=0;k<7;k++)wins+=`<rect x="${413+k*100}" y="412" width="36" height="120" rx="5" fill="${P.w}"/><rect x="${413+k*100}" y="560" width="36" height="90" rx="5" fill="${P.w}"/>`;
+  let bunt='';
+  if(P.fest){for(let k=0;k<22;k++){const x=k*76+20,y=70+46*Math.sin(Math.PI*x/1600);bunt+=`<path d="M${x} ${y} l34 0 l-17 32z" fill="${k%2?'#fff':'#ec4899'}" opacity=".95"/>`;}
+    bunt=`<path d="M0 70 Q800 150 1600 70" stroke="#fff" stroke-width="3" fill="none" opacity=".8"/>`+bunt;}
+  let stripes='';for(let k=0;k<8;k++){const x0=k*40;stripes+=`<path d="M${x0} 0 H${x0+40} L${x0+46} 56 Q${x0+23} 70 ${x0-6} 56Z" fill="${k%2?'#fff':'#ec4899'}"/>`;}
+  const stand=P.fest?`<g transform="translate(1190 500)"><rect x="4" y="0" width="6" height="250" fill="#8a6f8f"/><rect x="310" y="0" width="6" height="250" fill="#8a6f8f"/>${stripes}<rect x="10" y="160" width="300" height="12" fill="#fff"/><rect x="14" y="172" width="292" height="80" fill="#f9a8d4"/>${RIB(160,214,1.3)}<circle cx="-14" cy="36" r="22" fill="#ec4899"/><circle cx="332" cy="40" r="22" fill="#f9a8d4"/><circle cx="350" cy="14" r="19" fill="#fff"/></g>`:'';
+  const banner=P.fest?`<g><rect x="500" y="130" width="600" height="84" rx="18" fill="#ec4899" opacity=".96"/><text x="800" y="188" text-anchor="middle" font-size="44" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif" letter-spacing="6">OCTOBRE ROSE</text>${RIB(540,172,.8)}${RIB(1060,172,.8)}</g>`:'';
+  const bench=P.bench?`<g transform="translate(120 700)"><rect x="0" y="40" width="300" height="16" rx="4" fill="#6b4a3a"/><rect x="0" y="0" width="300" height="12" rx="4" fill="#6b4a3a"/><rect x="0" y="16" width="300" height="12" rx="4" fill="#6b4a3a"/><rect x="20" y="56" width="12" height="70" fill="#3a2a2a"/><rect x="268" y="56" width="12" height="70" fill="#3a2a2a"/></g>`:'';
+  return `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sk${v}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.s1}"/><stop offset="1" stop-color="${P.s2}"/></linearGradient><radialGradient id="sn${v}"><stop offset="0" stop-color="${P.sun}" stop-opacity=".95"/><stop offset="1" stop-color="${P.sun}" stop-opacity="0"/></radialGradient></defs>
+  <rect width="1600" height="900" fill="url(#sk${v})"/><circle cx="${P.sx}" cy="${P.sy}" r="280" fill="url(#sn${v})"/><circle cx="${P.sx}" cy="${P.sy}" r="56" fill="${P.sun}"/>
+  <path d="M0 650 Q300 560 600 630 T1200 610 T1600 640 L1600 900 L0 900Z" fill="${P.t2}" opacity=".45"/>
+  <g><rect x="330" y="360" width="800" height="340" fill="${P.b}"/><polygon points="300,360 730,230 1160,360" fill="${P.b2}"/><circle cx="730" cy="316" r="30" fill="#fff" opacity=".9"/><path d="M730 316 V298 M730 316 L744 322" stroke="${P.b2}" stroke-width="4" stroke-linecap="round"/><rect x="330" y="360" width="800" height="22" fill="${P.b2}"/>${cols}${wins}<rect x="696" y="590" width="70" height="110" rx="6" fill="${P.b2}"/><rect x="300" y="700" width="860" height="22" fill="${P.b2}"/><rect x="270" y="722" width="920" height="22" fill="${P.b2}" opacity=".85"/></g>
+  <rect y="744" width="1600" height="156" fill="${P.g}"/><path d="M540 900 L920 900 L800 744 L660 744Z" fill="${P.p}"/>
+  ${tree(110,700,1.35)}${tree(1500,700,1.2)}${tree(270,730,.8)}${bench}${stand}${banner}${bunt}
+  <rect width="1600" height="900" fill="#1a0f3a" opacity="${P.ov}"/></svg>`;
+}
+function bedroom(){
+  let stars='';[[1080,190],[1150,240],[1300,170],[1340,310],[1100,400],[1210,430],[1270,500],[1060,300]].forEach(p=>stars+=`<circle cx="${p[0]}" cy="${p[1]}" r="2.6" fill="#fff" opacity=".85"/>`);
+  return `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1b3d"/><stop offset="1" stop-color="#2d2250"/></linearGradient><radialGradient id="glow"><stop offset="0" stop-color="#ffb35c" stop-opacity=".55"/><stop offset="1" stop-color="#ffb35c" stop-opacity="0"/></radialGradient></defs>
+  <rect width="1600" height="900" fill="url(#bw)"/>
+  <rect x="1020" y="140" width="360" height="420" rx="18" fill="#0f1738" stroke="#6b5b95" stroke-width="10"/>${stars}
+  <circle cx="1230" cy="270" r="52" fill="#fff6d6"/><circle cx="1252" cy="256" r="46" fill="#0f1738"/>
+  <path d="M1200 140 V560 M1020 350 H1380" stroke="#6b5b95" stroke-width="8"/>
+  <path d="M960 120 Q1010 340 960 580 L1030 580 L1030 120Z M1440 120 Q1390 340 1440 580 L1370 580 L1370 120Z" fill="#5a2c6e" opacity=".9"/>
+  <rect x="380" y="190" width="200" height="280" rx="10" fill="#3a2f5e"/><circle cx="480" cy="300" r="46" fill="#ec4899" opacity=".7"/><rect x="410" y="380" width="140" height="10" rx="5" fill="#f9a8d4" opacity=".6"/><rect x="420" y="405" width="100" height="10" rx="5" fill="#f9a8d4" opacity=".4"/>
+  <rect x="60" y="300" width="260" height="12" fill="#4a3866"/><rect x="80" y="240" width="22" height="60" fill="#c0568a"/><rect x="106" y="252" width="18" height="48" fill="#6a8fd8"/><rect x="128" y="236" width="24" height="64" fill="#f2b84b"/>
+  <rect y="760" width="1600" height="140" fill="#241a38"/>
+  <rect x="860" y="640" width="720" height="260" rx="26" fill="#5b3a7a"/><rect x="860" y="610" width="720" height="110" rx="26" fill="#a24f8a"/><ellipse cx="990" cy="620" rx="100" ry="34" fill="#f3dcec"/>
+  <circle cx="260" cy="560" r="320" fill="url(#glow)"/><rect x="170" y="670" width="180" height="130" fill="#3a2a52"/><rect x="250" y="590" width="10" height="80" fill="#e8cfa1"/><path d="M200 590 L310 590 L290 530 L220 530Z" fill="#ffd9a0"/>
+  </svg>`;
+}
+function clinic(){
+  let bl='';for(let k=0;k<11;k++)bl+=`<rect x="1100" y="${134+k*27}" width="340" height="13" fill="#fff" opacity=".55"/>`;
+  return `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" fill="#e9f5f4"/><rect y="560" width="1600" height="340" fill="#cfe7e6"/><rect y="556" width="1600" height="8" fill="#fff"/>
+  <rect x="1100" y="130" width="340" height="300" fill="#bfe6ff"/>${bl}<rect x="1100" y="130" width="340" height="300" fill="none" stroke="#fff" stroke-width="12"/>
+  <rect x="180" y="140" width="300" height="410" rx="16" fill="#fff" stroke="#f9a8d4" stroke-width="5"/><rect x="180" y="140" width="300" height="96" rx="16" fill="#ec4899"/><text x="330" y="200" text-anchor="middle" font-size="34" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif">Octobre Rose</text>
+  ${RIB(330,356,3.2)}<text x="330" y="500" text-anchor="middle" font-size="20" font-weight="700" fill="#9d174d" font-family="Segoe UI,Arial,sans-serif">Dépister tôt,</text><text x="330" y="526" text-anchor="middle" font-size="20" font-weight="700" fill="#9d174d" font-family="Segoe UI,Arial,sans-serif">c'est sauver des vies</text>
+  <rect x="620" y="170" width="140" height="100" fill="#fff" stroke="#c9a66b" stroke-width="5"/><rect x="640" y="192" width="100" height="8" fill="#cbd5e1"/><rect x="640" y="212" width="100" height="8" fill="#cbd5e1"/><rect x="640" y="232" width="60" height="8" fill="#cbd5e1"/>
+  <rect x="790" y="170" width="140" height="100" fill="#fff" stroke="#c9a66b" stroke-width="5"/><circle cx="860" cy="220" r="26" fill="#f9a8d4"/>
+  <circle cx="960" cy="470" r="40" fill="#fff" stroke="#94a3b8" stroke-width="5"/><path d="M960 470 V444 M960 470 L980 478" stroke="#475569" stroke-width="4" stroke-linecap="round"/>
+  <g><path d="M40 760 L120 760 L110 840 L50 840Z" fill="#c2713f"/><ellipse cx="80" cy="720" rx="30" ry="70" fill="#4ea96e"/><ellipse cx="45" cy="740" rx="22" ry="52" fill="#6cc48a" transform="rotate(-22 45 740)"/><ellipse cx="115" cy="740" rx="22" ry="52" fill="#3f9a62" transform="rotate(22 115 740)"/></g>
+  <rect y="730" width="1600" height="170" fill="#b98458"/><rect y="730" width="1600" height="12" fill="#d9a877"/></svg>`;
+}
+const BG={campus:()=>campus('day'),campusEve:()=>campus('eve'),dawn:()=>campus('dawn'),grey:()=>campus('grey'),bedroom,clinic};
+
+/* ---------- SCÉNARIO ---------- */
+const QUIZ_TOTAL=4;
+const SC=[
+/* Chapitre 1 */
+{id:'start',bg:'campus',ch:'Chapitre 1 · Un campus en rose',c:{L:null,C:null,R:null},w:'n',t:"Jeudi 15 octobre. C'est Octobre Rose sur le campus : rubans roses accrochés aux grilles, affiches, ballons… et un stand de sensibilisation devant la bibliothèque."},
+{w:'n',c:{R:'amira:happy'},t:"Tu t'approches du stand. Amira, 21 ans, y distribue des brochures avec un grand sourire."},
+{w:'amira',t:"Salut ! Viens, n'aie pas peur, je ne mords pas. Moi c'est Amira, je suis bénévole sur ce stand. Cette année, j'ai décidé de raconter mon histoire."},
+{w:'n',c:{L:'nour:worried'},t:"Un peu plus loin, sur un banc, Nour — de la même promo qu'Amira — fixe son téléphone sans vraiment le regarder. Elle serre son pull contre elle."},
+{id:'q1',w:'you',t:"Que réponds-tu à Amira ?",choices:[
+  {t:"« Raconte-moi, je t'écoute. »",to:'story',s:1,fb:"Écouter, c'est déjà sensibiliser."},
+  {t:"« Je n'ai pas trop le temps… »",to:'rush',s:0}]},
+{id:'rush',w:'amira',c:{R:'amira:smile'},t:"Pas de souci. Mais cinq minutes d'information peuvent changer une vie. Juste cinq minutes, promis.",go:'story'},
+{id:'story',w:'amira',c:{R:'amira:serious'},t:"Il y a deux ans, en faisant mon autopalpation sous la douche, j'ai senti une petite boule. Aucune douleur. Rien d'alarmant en apparence."},
+{w:'amira',c:{R:'amira:worried'},t:"J'ai eu peur, comme tout le monde. Mais j'ai pris rendez-vous dès la semaine suivante. Cette décision-là a tout changé."},
+{w:'amira',c:{R:'amira:happy'},t:"Aujourd'hui je suis en rémission, avec un suivi régulier. Si j'avais attendu, ce serait une tout autre histoire."},
+{w:'nour',c:{L:'nour:serious'},t:"Amira… tu peux arrêter d'en parler devant tout le monde ?"},
+{w:'amira',c:{R:'amira:surprised'},t:"Nour ? Je… je ne voulais pas te blesser."},
+{w:'amira',c:{R:'amira:worried'},t:"Ça fait des semaines que tu évites mes messages. Tu as maigri, tu as l'air épuisée. Il se passe quelque chose ?"},
+{w:'nour',c:{L:'nour:sad'},t:"Je suis juste fatiguée. Les partiels, tout ça. Laissez-moi tranquille."},
+{w:'n',c:{L:null},t:"Nour attrape son sac et s'éloigne d'un pas rapide."},
+{id:'q2',w:'you',t:"Que fais-tu ?",choices:[
+  {t:"Courir après Nour",to:'chase',s:1,fb:"Montrer qu'on est là compte."},
+  {t:"La laisser partir",to:'let',s:0}]},
+{id:'chase',w:'n',t:"Tu la rattrapes devant la bibliothèque. Elle ne se retourne pas, mais elle s'arrête. « Pas ici… Demain, après les cours, derrière la fac », murmure-t-elle.",go:'night'},
+{id:'let',w:'amira',c:{R:'amira:worried'},t:"On la laisse respirer. Mais demain, on va la voir : je ne la laisserai pas seule avec ça. Retrouvons-nous derrière la fac, en fin d'après-midi.",go:'night'},
+
+/* Chapitre 2 */
+{id:'night',bg:'bedroom',ch:'Chapitre 2 · La nuit de Nour',c:{L:null,R:null,C:'nour:sad'},w:'n',t:"Le soir même, dans la chambre de Nour. Elle ne dort pas."},
+{w:'nour',t:"Huit mois… Huit mois que cette boule est là."},
+{w:'nour',c:{C:'nour:worried'},t:"Au début, elle était minuscule. Je me suis dit : ça va passer. Maintenant elle a grossi, elle me tire sous le bras, et la peau a changé."},
+{w:'nour',c:{C:'nour:sad'},t:"Maman dirait que c'est hchouma d'en parler. Ma cousine m'a dit qu'avec des plantes, ça disparaîtrait tout seul…"},
+{w:'nour',c:{C:'nour:cry'},t:"Et si le médecin me disait que… Non. Je n'y pense pas. Demain, peut-être. Demain."},
+{w:'n',t:"Demain est devenu la semaine suivante. La semaine suivante est devenue le mois suivant. Nour a attendu. Elle attend encore."},
+{fact:{ic:'💭',title:"Pourquoi on retarde la consultation ?",items:["La peur du diagnostic : on préfère ne pas savoir.","Le tabou et la honte (« hchouma »), surtout quand il s'agit du corps.","L'espoir que « ça passera tout seul ».","Les remèdes à base de plantes ou les conseils de l'entourage à la place d'un avis médical.","Le manque d'information sur les signes à surveiller."],foot:"Chaque mois d'attente compte. Un cancer du sein dépisté tôt se soigne beaucoup mieux."}},
+
+/* Chapitre 3 */
+{id:'meet',bg:'campusEve',ch:'Chapitre 3 · Derrière la fac',c:{C:null,L:'nour:sad',R:'amira:worried'},w:'n',t:"Le lendemain, en fin d'après-midi. Nour est déjà là, les bras croisés. Elle n'a visiblement pas dormi."},
+{w:'amira',t:"Merci d'être venue, Nour."},
+{w:'nour',c:{L:'nour:serious'},t:"Je suis venue parce que fuir devenait pire. Mais je ne suis pas sûre de vouloir en parler."},
+{id:'q3',w:'you',t:"Comment engages-tu la discussion ?",choices:[
+  {t:"« Tu as peur de quelque chose ? On est là, sans te juger. »",to:'open',s:2,fb:"Une écoute sans jugement ouvre la porte."},
+  {t:"« Si tu as un problème de santé, va chez le médecin, c'est tout. »",to:'blunt',s:0}]},
+{id:'blunt',w:'nour',c:{L:'nour:serious'},t:"Tu crois que je ne le sais pas ?! C'est facile à dire quand on n'a pas peur."},
+{w:'amira',c:{R:'amira:smile'},t:"Nour, personne ne te juge. Moi aussi, j'ai eu peur. Dis-nous juste ce qui te fait le plus peur."},
+{id:'open',w:'nour',c:{L:'nour:cry'},t:"Il y a une boule dans mon sein gauche. Depuis huit mois. Elle a grossi, j'ai mal parfois, et la peau a changé… comme une peau d'orange."},
+{w:'amira',c:{R:'amira:surprised'},t:"Huit mois ?!"},
+{w:'amira',c:{R:'amira:worried'},t:"Nour… ce n'est pas une honte. Mais il faut consulter. Vite."},
+{w:'nour',c:{L:'nour:cry'},t:"Et si c'était déjà trop tard ?"},
+{id:'q4',w:'you',t:"Nour pleure en attendant ta réponse…",choices:[
+  {t:"« Un diagnostic n'est pas une condamnation. Plus on agit tôt, plus il y a de solutions — même maintenant. »",to:'hope',s:2,fb:"Rassurer sans mentir."},
+  {t:"« Je viens avec toi. Tu n'iras pas seule. »",to:'hope',s:2,fb:"L'accompagnement fait la différence."},
+  {t:"« Honnêtement, mieux vaut ne pas trop y penser. »",to:'bad',s:-1,fb:"Éviter le sujet, c'est retarder encore."}]},
+{id:'bad',w:'nour',c:{L:'nour:sad'},t:"…Tu as raison. Je vais attendre encore un peu."},
+{w:'amira',c:{R:'amira:surprised'},t:"Non ! On n'attend plus."},
+{w:'amira',c:{R:'amira:serious'},t:"Nour, regarde-moi. Il y a deux ans, j'avais aussi peur. La peur ne guérit personne. Un rendez-vous, si.",go:'drgo'},
+{id:'hope',w:'nour',c:{L:'nour:worried'},t:"…Tu crois vraiment qu'il y a encore des solutions ?"},
+{w:'amira',c:{R:'amira:smile'},t:"Je ne le crois pas, je le sais : je l'ai vécu. Mais il faut commencer aujourd'hui."},
+{id:'drgo',w:'amira',c:{R:'amira:smile'},t:"Je t'emmène chez le Dr Bensalem, c'est lui qui m'a suivie. Il est calme, il explique tout, il ne juge pas."},
+{w:'nour',c:{L:'nour:worried'},t:"D'accord… Mais je tremble."},
+
+/* Chapitre 4 */
+{id:'cab',bg:'clinic',ch:'Chapitre 4 · Le cabinet du Dr Bensalem',c:{L:'nour:worried',C:'doc:smile',R:'amira:smile'},w:'doc',t:"Bonjour Nour, bonjour Amira. Installez-vous. Ici, personne ne vous juge. Dites-moi tout, à votre rythme."},
+{w:'nour',t:"J'ai une boule dans le sein depuis huit mois… et j'ai attendu. Je suis désolée."},
+{w:'doc',c:{C:'doc:serious'},t:"Merci de me l'avoir dit : c'était la partie la plus difficile. Je vais vous examiner, puis nous ferons une échographie, une mammographie et une biopsie pour savoir exactement de quoi il s'agit."},
+{w:'n',t:"Quelques jours plus tard, les résultats arrivent. Nour est revenue, Amira à ses côtés."},
+{w:'doc',c:{C:'doc:serious'},t:"Nour, je vais être honnête parce que vous le méritez : c'est un cancer du sein, et il est plus avancé qu'il ne l'aurait été il y a huit mois."},
+{w:'nour',c:{L:'nour:cry'},t:"Donc… c'est trop tard ?"},
+{w:'doc',c:{C:'doc:smile'},t:"Non. Ce n'est pas trop tard pour agir. Selon le type de tumeur et son extension : chirurgie, chimiothérapie, radiothérapie, hormonothérapie, thérapies ciblées. Le traitement sera plus lourd que si vous étiez venue plus tôt, mais il existe, et il aide beaucoup de patientes."},
+{w:'doc',c:{C:'doc:serious'},t:"Ce n'est pas votre faute d'avoir eu peur. Mais maintenant, chaque semaine compte. Et les plantes ne remplacent jamais un traitement : certaines peuvent même interférer avec les médicaments."},
+{w:'nour',c:{L:'nour:sad'},t:"Amira… comment toi, tu as fait ?"},
+{w:'doc',c:{C:'doc:smile'},t:"Regardez ces deux parcours. Même maladie, même âge, deux décisions différentes."},
+{compare:true},
+{w:'amira',c:{R:'amira:smile'},t:"Je ne suis pas plus courageuse que toi, Nour. J'ai juste consulté plus tôt."},
+{w:'doc',c:{C:'doc:happy'},t:"Et toi, tu as aidé Nour à franchir cette porte : tu fais partie de la chaîne de prévention. Voyons ce que tu retiens — vrai ou faux ?"},
+{quiz:{q:"Si personne dans ma famille n'a eu de cancer du sein, je ne risque rien.",a:false,x:"Faux. La grande majorité des cas touchent des femmes sans antécédents familiaux. Tout le monde doit rester attentif."}},
+{quiz:{q:"Faire l'autopalpation une fois par mois aide à repérer un changement.",a:true,x:"Vrai. Elle t'aide à connaître tes seins et à remarquer une anomalie. Mais elle ne remplace ni l'examen médical ni la mammographie."}},
+{quiz:{q:"Une boule qui ne fait pas mal n'est pas inquiétante.",a:false,x:"Faux. Au début, une tumeur du sein est souvent indolore. L'absence de douleur ne rassure pas : toute boule doit être examinée."}},
+{quiz:{q:"À 21 ans, on est trop jeune pour être concernée.",a:false,x:"Faux. C'est rare à cet âge, mais cela existe. Connaître ses seins et consulter au moindre changement est utile à tout âge."}},
+{fact:{ic:'🔎',title:"Les signes qui doivent t'alerter",items:["Une boule ou un épaississement dans le sein ou sous l'aisselle (même indolore)","Un changement de taille ou de forme d'un sein","Une peau rouge, creusée ou en « peau d'orange »","Un mamelon rétracté ou un écoulement inhabituel","Une douleur persistante, localisée, qui ne passe pas"],foot:"Un seul signe ne veut pas forcément dire cancer — mais seul un médecin peut le dire. Dans le doute : consulte."}},
+{w:'doc',c:{C:'doc:smile'},t:"Et pour ne jamais l'oublier : voici comment faire l'autopalpation, une fois par mois."},
+{steps:[
+ {ic:'🪞',t:"1 · Observer",d:"Devant un miroir, bras le long du corps : regarde la forme, la taille, la peau et les mamelons de chaque sein. Puis lève les bras et recommence."},
+ {ic:'🚿',t:"2 · Palper debout",d:"Sous la douche, la peau savonnée glisse mieux. Avec la pulpe de trois doigts, fais de petits cercles sur tout le sein, jusqu'à l'aisselle et à la clavicule."},
+ {ic:'🛏️',t:"3 · Palper allongée",d:"Allongée, un coussin sous l'épaule, le bras derrière la tête : recommence le même geste, en couvrant tout le sein, en spirale ou de haut en bas."},
+ {ic:'📅',t:"4 · Chaque mois",d:"Quelques jours après la fin des règles (une date fixe après la ménopause). Retiens ce qui est normal pour toi — et consulte au moindre changement."}]},
+{w:'doc',c:{C:'doc:serious'},t:"Nour, le moment est venu de décider. Nous pouvons commencer votre traitement. Qu'en pensez-vous ?"},
+{route:true},
+
+/* Fin A */
+{id:'endA',bg:'dawn',ch:"Fin A · Le bon réflexe",c:{L:'nour:smile',C:'doc:smile',R:'amira:happy'},w:'nour',t:"Oui. Commençons. Dès demain, si c'est possible. J'ai déjà perdu huit mois à avoir peur."},
+{w:'doc',t:"Alors nous commençons dès cette semaine. Vous n'êtes pas seule dans ce parcours."},
+{w:'n',t:"Nour parle à sa famille. Sa mère pleure, puis la serre dans ses bras. Les mois sont longs, les traitements fatigants, mais Nour avance, entourée."},
+{w:'n',c:{L:'nour:happy:ribbon',C:null,R:'amira:happy'},t:"Un an plus tard. Octobre Rose, de nouveau. Au stand, un ruban rose sur la veste, Nour distribue les brochures."},
+{w:'nour',t:"J'ai perdu huit mois par peur. Je ne veux pas que quelqu'un d'autre fasse la même erreur. Observe, palpe, consulte. Pas demain : aujourd'hui."},
+{w:'amira',t:"Et on le dit ensemble. À chaque Octobre Rose."},
+{end:'A'},
+
+/* Fin B */
+{id:'endB',bg:'dawn',ch:"Fin B · Un pas après l'autre",c:{L:'nour:worried',C:'doc:smile',R:'amira:smile'},w:'nour',t:"Je… je veux bien commencer. Mais laissez-moi quelques jours pour l'annoncer à ma famille."},
+{w:'doc',t:"Quelques jours, d'accord. Pas davantage. Chaque semaine compte, mais le plus important, c'est que vous soyez là."},
+{w:'n',t:"Nour a mis deux semaines avant de commencer son traitement. Deux semaines de trop, peut-être. Mais elle y est, avec Amira et sa famille derrière elle."},
+{w:'amira',c:{R:'amira:happy'},t:"On avance, un pas après l'autre. Et on ne lâche pas."},
+{end:'B'},
+
+/* Fin C */
+{id:'endC',bg:'grey',ch:"Fin C · Trop tard",c:{L:'nour:sad',C:'doc:serious',R:'amira:worried'},w:'nour',t:"Je… je vais y réfléchir. Je ne suis pas prête."},
+{w:'doc',t:"Je comprends. Ma porte reste ouverte. Mais je dois être clair : plus le temps passe, plus le traitement se complique."},
+{w:'n',c:{L:null},t:"Nour quitte le cabinet sans prendre rendez-vous. Les jours passent."},
+{w:'n',c:{C:null,R:null},t:"Les semaines passent. Nour se tait, cache sa douleur, essaie des tisanes et des remèdes. Amira appelle, mais Nour ne répond plus."},
+{w:'n',t:"Sans soins, la maladie s'est étendue au reste du corps. Quand Nour arrive enfin à l'hôpital, en urgence, il est trop tard pour la guérir."},
+{w:'n',t:"Nour est morte quelques semaines plus tard. Elle avait 21 ans."},
+{w:'amira',c:{R:'amira:cry'},t:"Elle avait peur, et nous n'avons pas su la convaincre à temps… Huit mois de silence. Huit mois qu'on ne rattrapera jamais."},
+{w:'n',t:"Cette histoire est fictive, mais elle arrive dans la vraie vie : un cancer du sein découvert trop tard, à cause de la peur, du tabou et du silence. Toi, tu peux agir."},
+{end:'C'}
+];
+SC.forEach((n,k)=>n._i=k);
+const IDX={};SC.forEach((n,k)=>{if(n.id)IDX[n.id]=k;});
+let qn=0;SC.forEach(n=>{if(n.quiz)n.quiz.k=++qn;});
+
+/* ---------- MOTEUR ---------- */
+let i=0,score=0,cast={L:null,C:null,R:null},log=[],typeT=null,full='',busy=false,cur=null,mode='title',bgCur=null;
+
+function setBG(name){
+  if(name===bgCur)return;bgCur=name;
+  const a=document.querySelector('.bg.on'),b=document.querySelector('.bg:not(.on)');
+  b.innerHTML=BG[name]();b.classList.add('on');if(a)a.classList.remove('on');
+}
+function renderSlots(who){
+  for(const k of ['L','C','R']){
+    const el=$('#s'+k),v=cast[k];
+    if(v){
+      const p=v.split(':');
+      if(el.dataset.sig!==v){el.innerHTML=char(p[0],p[1],p[2]);el.dataset.sig=v;}
+      el.classList.add('show');
+      el.classList.toggle('act',!!who&&p[0]===who);
+      el.classList.toggle('dim',!!who&&NAMES[who]&&who!=='you'&&p[0]!==who);
+    }else{el.classList.remove('show','act','dim','talking');el.dataset.sig='';}
+  }
+}
+function applyCast(c){if(c)for(const k in c)cast[k]=c[k]||null;renderSlots(cur&&cur.w);}
+function setTalk(on){document.querySelectorAll('.slot').forEach(s=>s.classList.toggle('talking',on&&s.classList.contains('act')));}
+
+function show(){
+  const n=SC[i];cur=n;
+  if(n.route){go(score>=8?'endA':score>=5?'endB':'endC');return;}
+  if(n.ch){
+    mode='card';$('#dlg').classList.add('hid');$('#choices').classList.remove('on');
+    chIdx=n._i;const lab=chL(n),p=lab.split('·');
+    $('#chap').innerHTML='<small>'+p[0].trim()+'</small><h1>'+p[1].trim()+'</h1><div class="line"></div>';
+    $('#chap').classList.add('on');$('#chlabel').textContent=lab;
+    setTimeout(()=>{if(n.bg)setBG(n.bg);applyCast(n.c);},800);
+    setTimeout(()=>$('#chap').classList.remove('on'),2700);
+    setTimeout(()=>body(n),3300);
+  }else{if(n.bg)setBG(n.bg);body(n);}
+}
+function body(n){
+  applyCast(n.c);
+  if(n.fact)return showFact(n.fact);
+  if(n.quiz)return showQuiz(n.quiz);
+  if(n.steps)return showSteps(n.steps);
+  if(n.compare)return showCompare();
+  if(n.end)return showEnd(n.end);
+  say(n);
+}
+function say(n){
+  mode='dlg';$('#dlg').classList.remove('hid');
+  const nm=NAMES[n.w],tag=$('#name');
+  if(nm){tag.style.display='block';tag.textContent=nm;tag.style.background=COL[n.w];}else tag.style.display='none';
+  $('#txt').className=(n.w==='n'||n.w==='you')?'i':'';
+  full=tr(n);log.push({w:n.w,t:full});
+  $('#nxt').style.visibility='hidden';
+  renderSlots(n.w);type(full);
+}
+function type(s){
+  clearInterval(typeT);const el=$('#txt');el.textContent='';let k=0;busy=true;setTalk(true);
+  typeT=setInterval(()=>{k++;el.textContent=s.slice(0,k);if(k>=s.length)finish();},18);
+}
+function finish(){
+  clearInterval(typeT);$('#txt').textContent=full;busy=false;setTalk(false);
+  if(cur.choices)showChoices(cur.choices);else $('#nxt').style.visibility='visible';
+}
+function advance(){if(mode!=='dlg')return;if(busy)finish();else if(!cur.choices)next();}
+function next(){const n=SC[i];if(n.go)go(n.go);else{i++;show();}}
+function go(id){i=IDX[id];show();}
+
+function showChoices(ch){
+  mode='choice';const box=$('#choices');box.innerHTML='';
+  ch.forEach((c,k)=>{const b=document.createElement('button');b.className='choice';b.style.animationDelay=(k*.12)+'s';b.innerHTML='<span class="k">'+(k+1)+'</span>'+ctr(k)[0];b.onclick=()=>pick(c);box.appendChild(b);});
+  box.classList.add('on');
+}
+function pick(c){
+  sfx('pop');score+=c.s||0;$('#choices').classList.remove('on');
+  const x=ctr(cur.choices.indexOf(c));log.push({w:'you',t:'→ '+x[0]});updMeter();
+  if(x[1])toast((c.s>0?'+'+c.s+' · ':c.s<0?c.s+' · ':'')+x[1],c.s<0);
+  mode='card';setTimeout(()=>go(c.to),350);
+}
+function updMeter(){$('#fill').style.width=Math.max(0,Math.min(10,score))*10+'%';}
+function toast(m,neg){const t=$('#toast');t.textContent=m;t.className='on'+(neg?' neg':'');clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='',2800);}
+
+/* modales */
+function openModal(html){mode='modal';const m=$('#modal');m.innerHTML='<div class="card">'+html+'</div>';m.classList.add('on');}
+function closeModal(){$('#modal').classList.remove('on');mode='card';next();}
+function showFact(f){
+  const e=S(cur),ti=e?e[0]:f.title,it=e?e[1]:f.items,ft=e?e[2]:f.foot;
+  sfx('chime');
+  openModal('<div class="ic">'+f.ic+'</div><h2>'+ti+'</h2><ul>'+it.map((x,k)=>'<li style="animation-delay:'+(k*.12)+'s">'+x+'</li>').join('')+'</ul><div class="foot">'+ft+'</div><button class="btn" onclick="closeModal()">'+u('cont')+'</button>');
+}
+function showQuiz(q){
+  const e=S(cur),Q=e?e[0]:q.q,X=e?e[1]:q.x;
+  openModal('<span class="tagq">'+u('tf')+' · '+q.k+' / '+QUIZ_TOTAL+'</span><h2>« '+Q+' »</h2><div class="row"><button class="qb" data-v="1">✔ '+u('t')+'</button><button class="qb" data-v="0">✘ '+u('f')+'</button></div><div id="qres"></div>');
+  document.querySelectorAll('.qb').forEach(b=>b.onclick=()=>{
+    const v=b.dataset.v==='1',ok=v===q.a;
+    document.querySelectorAll('.qb').forEach(x=>{x.disabled=true;if((x.dataset.v==='1')===q.a)x.classList.add('ok');});
+    if(!ok)b.classList.add('ko');
+    if(ok){score++;updMeter();sfx('ok');}else sfx('ko');
+    log.push({w:'you',t:u('quiz')+Q+' → '+(ok?u('right'):u('wrong'))});
+    $('#qres').innerHTML='<div class="foot"><b>'+(ok?u('bravo'):u('notq'))+'</b>'+X+'</div><button class="btn" onclick="closeModal()">'+u('cont')+'</button>';
+  });
+}
+let stp=0;
+function showSteps(st){
+  stp=0;
+  const draw=()=>{
+    const s=st[stp],e=S(cur),t=e?e[stp][0]:s.t,d=e?e[stp][1]:s.d;
+    openModal('<span class="tagq">'+u('auto')+' · '+(stp+1)+' / '+st.length+'</span><div class="step"><div class="big">'+s.ic+'</div><h3>'+t+'</h3><p>'+d+'</p></div><div class="dots">'+st.map((_,k)=>'<i class="'+(k===stp?'on':'')+'"></i>').join('')+'</div><div class="row" style="justify-content:center">'+(stp>0?'<button class="btn ghost" id="pv">'+u('prev')+'</button>':'')+'<button class="btn" id="nx">'+(stp<st.length-1?u('nextb'):u('fin'))+'</button></div><p class="small" style="text-align:center">'+u('autoD')+'</p>');
+    sfx('pop');
+    if($('#pv'))$('#pv').onclick=()=>{stp--;draw();};
+    $('#nx').onclick=()=>{if(stp<st.length-1){stp++;draw();}else closeModal();};
+  };
+  draw();
+}
+function showCompare(){
+  const col=(c,t,arr,d0)=>'<div class="col '+c+'"><h3>'+t+'</h3>'+arr.map((e,k)=>'<div class="ev" style="animation-delay:'+(d0+k*.35)+'s"><b>'+e[0]+'</b>'+e[1]+'</div>').join('')+'</div>';
+  sfx('chime');
+  openModal('<h2>'+u('cmpT')+'</h2><div class="cmp">'+col('a',u('cmpAn'),u('cmpA'),.1)+col('n',u('cmpNn'),u('cmpN'),.3)+'</div><div class="foot">'+u('cmpF')+'</div><button class="btn" onclick="closeModal()">'+u('cont')+'</button>');
+}
+
+/* fin */
+function showEnd(k,quiet){
+  lastEnd=k;mode='end';$('#dlg').classList.add('hid');$('#choices').classList.remove('on');
+  const E=u('e'+k),s=Math.max(0,Math.min(10,score));
+  const why=k==='C'?'<div class="foot" style="text-align:start"><b>'+u('whyT')+'</b><ul style="margin:10px 0">'+u('why').map(x=>'<li>'+x+'</li>').join('')+'</ul>'+u('whyF')+'</div>':'';
+  $('#end').innerHTML='<div class="card"><div class="big">'+E[0]+'</div><h1>'+E[1]+'</h1><p>'+E[2]+'</p>'
+   +'<div class="sc"><b>'+u('score')+' : '+s+' / 10</b><div class="bar"><i style="width:'+s*10+'%"></i></div></div>'
+   +'<div class="stat">'+u(k==='C'?'statC':'stat')+'</div>'+why
+   +'<h2 style="margin-top:14px">'+u('keepT')+'</h2><ul>'+u('keep').map(x=>'<li>'+x+'</li>').join('')+'</ul>'
+   +'<div class="row" style="justify-content:center"><button class="btn" onclick="restart()">'+u('replay')+'</button><button class="btn ghost" onclick="openInfo()">'+u('about')+'</button><button class="btn ghost" onclick="openLang()">🌐 '+u('lc')+'</button></div>'
+   +'<p class="small">'+u('disc')+' · '+UNIV+'</p>'+credits()+'</div>';
+  $('#end').classList.add('on');if(!quiet)sfx('chime');
+}
+function restart(){
+  score=0;cast={L:null,C:null,R:null};log=[];updMeter();
+  $('#end').classList.remove('on');$('#modal').classList.remove('on');$('#choices').classList.remove('on');
+  ['L','C','R'].forEach(k=>{const el=$('#s'+k);el.classList.remove('show','act','dim','talking');el.dataset.sig='';});
+  i=0;mode='card';show();
+}
+
+/* aux : journal / info */
+function openAux(html){$('#aux').innerHTML='<div class="card">'+html+'<div class="row" style="margin-top:16px"><button class="btn ghost" onclick="closeAux()">'+u('close')+'</button></div></div>';$('#aux').classList.add('on');}
+function closeAux(){$('#aux').classList.remove('on');}
+function openInfo(){openAux('<h2>'+u('infoT')+'</h2>'+u('info')+'<p class="small">'+UNIV+'</p>'+credits());}
+function openLog(){
+  openAux('<h2>'+u('logT')+'</h2><div class="log">'+(log.length?log.map(l=>'<p><b style="color:'+(COL[l.w]||'#c4b5fd')+'">'+(NAMES[l.w]||u('narr'))+'</b>'+l.t+'</p>').join(''):'<p>'+u('logE')+'</p>')+'</div>');
+  const c=$('#aux .card');c.scrollTop=c.scrollHeight;
+}
+function openLang(){openAux('<h2>🌐 '+u('lang')+'</h2><div class="row">'+['fr','en','ar'].map(l=>'<button class="btn'+(l===lang?'':' ghost')+'" onclick="setLang(\''+l+'\')">'+LN[l]+'</button>').join('')+'</div>');}
+function applyStatic(){
+  document.documentElement.lang=lang;$('#stage').classList.toggle('rtl',lang==='ar');document.title=u('doc');
+  $('#kk').textContent=u('kick');$('#tt').innerHTML=u('ttl');$('#sb').textContent=u('sub');
+  $('#start').textContent='▶ '+u('start');$('#how').textContent=u('how');$('#tLang').textContent='🌐 '+u('lc');
+  $('#credit').innerHTML=credits();
+  const T={bLog:'tLog',bSnd:'tSnd',bFs:'tFs',bInfo:'tInfo',bLang:'tLang'};
+  for(const k in T)$('#'+k).title=u(T[k]);
+}
+function refresh(){
+  if($('#end').classList.contains('on')){showEnd(lastEnd,1);return;}
+  if(chIdx!=null)$('#chlabel').textContent=chL(SC[chIdx]);
+  if(mode==='dlg'||mode==='choice'){const nm=NAMES[cur.w];if(nm)$('#name').textContent=nm;full=tr(cur);finish();}
+  else if(mode==='modal'){$('#modal').classList.remove('on');body(cur);}
+}
+function setLang(l){lang=l;try{localStorage.setItem('nrLang',l);}catch(e){}closeAux();applyStatic();refresh();}
+
+/* ---------- INTERFACE ---------- */
+$('#univ').textContent=UNIV;
+try{const sl=localStorage.getItem('nrLang');if(['fr','en','ar'].includes(sl))lang=sl;}catch(e){}
+applyStatic();
+$('#tri').innerHTML=char('nour','worried')+char('doc','smile')+char('amira','happy');
+$('#bgA').innerHTML=BG.dawn();$('#bgA').classList.add('on');bgCur='dawn';
+for(let k=0;k<20;k++){const p=document.createElement('span');p.className='petal';const s=7+Math.random()*10;p.style.cssText='left:'+Math.random()*100+'%;width:'+s+'px;height:'+s+'px;animation-duration:'+(11+Math.random()*12)+'s;animation-delay:'+(-Math.random()*20)+'s;opacity:.7';$('#petals').appendChild(p);}
+
+$('#start').onclick=()=>{ac();startMusic();sfx('pop');$('#title').classList.add('gone');setTimeout(restart,500);};
+$('#how').onclick=()=>{ac();openInfo();};
+$('#bInfo').onclick=openInfo;$('#bLang').onclick=openLang;$('#tLang').onclick=openLang;
+$('#bLog').onclick=openLog;
+$('#bSnd').onclick=()=>{ac();soundOn=!soundOn;if(master)master.gain.value=soundOn?1:0;if(soundOn)startMusic();$('#bSnd').textContent=soundOn?'🔊':'🔇';};
+$('#bFs').onclick=()=>{const d=document;if(!d.fullscreenElement){(d.documentElement.requestFullscreen||d.documentElement.webkitRequestFullscreen||function(){}).call(d.documentElement);}else(d.exitFullscreen||d.webkitExitFullscreen).call(d);};
+$('#stage').addEventListener('click',e=>{
+  if(e.target.closest('button,#modal,#aux,#choices,#end,#title,#hud'))return;
+  advance();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeAux();return;}
+  if($('#aux').classList.contains('on'))return;
+  if(e.key===' '||e.key==='Enter'||e.key==='ArrowRight'){if(mode==='dlg'){e.preventDefault();advance();}}
+  if(mode==='choice'&&/^[1-9]$/.test(e.key)){const b=document.querySelectorAll('.choice')[+e.key-1];if(b)b.click();}
+});
+</script>
+</body>
+</html>
